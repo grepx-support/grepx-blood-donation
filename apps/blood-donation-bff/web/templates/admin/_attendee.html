@@ -1,0 +1,65 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% import "partials/_ui.html" as ui with context %}
+{# Details of one person on a drive (loaded into the drive page's side panel). #}
+<div class="flex items-start gap-4">
+  {{ ui.avatar(b.name, 'w-14', 'bg-primary text-primary-content', donor.photo_id if donor) }}
+  <div class="min-w-0 flex-1">
+    <h3 class="truncate text-xl font-extrabold">{{ donor.name if donor else b.name }}</h3>
+    <div class="mt-1 flex flex-wrap gap-1.5">{{ ui.status_badge(b.status) }}
+      {% if donor and donor.blood_group %}<span class="badge badge-primary badge-sm">{{ donor.blood_group }}</span>{% endif %}
+      {% if not donor %}<span class="badge badge-ghost badge-sm">Guest (no account)</span>{% elif donor.role != 'donor' %}<span class="badge badge-secondary badge-sm capitalize">{{ donor.role }}</span>{% endif %}
+      {% if b.source in ('walkin', 'kiosk') %}<span class="badge badge-ghost badge-sm">Walk-in</span>{% endif %}</div>
+  </div>
+</div>
+
+<div class="mt-5 grid gap-2 text-sm sm:grid-cols-2">
+  {% set phone = donor.phone if donor else b.phone %}{% set email = donor.email if donor else b.email %}
+  <div class="flex items-center gap-2 rounded-xl bg-base-200/60 p-2.5"><i data-lucide="phone" class="size-4 opacity-60"></i><span class="flex-1 truncate">{{ phone|phone or '—' }}</span>
+    {% if phone %}<a href="{{ phone|wa }}" target="_blank" class="btn btn-ghost btn-xs text-success" title="WhatsApp"><i data-lucide="message-circle" class="size-4"></i></a><a href="tel:{{ phone }}" class="btn btn-ghost btn-xs" title="Call"><i data-lucide="phone-call" class="size-4"></i></a>{% endif %}</div>
+  <div class="flex items-center gap-2 rounded-xl bg-base-200/60 p-2.5"><i data-lucide="mail" class="size-4 opacity-60"></i>
+    {% if email and '@no-email.local' not in email %}<a class="flex-1 truncate link-hover" href="mailto:{{ email }}">{{ email }}</a>{% else %}<span class="flex-1 opacity-60">No email</span>{% endif %}</div>
+  {% if donor %}
+  <div class="rounded-xl bg-base-200/60 p-2.5"><div class="text-xs opacity-60">Donations</div><b class="text-lg">{{ donor.total }}</b>{% if donor.last_donation %} <span class="text-xs opacity-60">· last {{ donor.last_donation|nice_date }}</span>{% endif %}</div>
+  <div class="rounded-xl p-2.5 {{ 'bg-success/10' if eligibility.ready else 'bg-warning/10' }}"><div class="text-xs opacity-60">Eligibility</div>
+    <b class="{{ 'text-success' if eligibility.ready else 'text-warning' }}">{{ 'Can donate' if eligibility.ready else 'Wait ' ~ eligibility.days_left ~ ' days' }}</b></div>
+  <div class="rounded-xl bg-base-200/60 p-2.5"><div class="text-xs opacity-60">Sex · Weight</div><b>{{ donor.sex or '—' }} · {{ (donor.weight ~ ' kg') if donor.weight else '—' }}</b></div>
+  <div class="rounded-xl bg-base-200/60 p-2.5"><div class="text-xs opacity-60">Date of birth</div><b>{{ donor.dob|nice_date if donor.dob else '—' }}</b></div>
+  {% endif %}
+</div>
+
+{% if slots and current_user.can('manage_drives') %}
+<form method="post" action="{{ url_for('attendees.move_slot', i=drive_id, iid=b.id) }}" class="mt-5 rounded-2xl border border-base-300/60 p-3" x-data="{ pick: '{{ b.slot_id or '' }}' }">{{ ui.csrf() }}
+  <div class="mb-2 flex items-center justify-between"><b class="flex items-center gap-2 text-sm"><i data-lucide="clock" class="size-4 text-primary"></i>Time slot</b>
+    <span class="text-xs opacity-60">{{ ('Now ' ~ slot.starts_at ~ '–' ~ slot.ends_at) if slot else 'No time booked' }}</span></div>
+  <div class="grid max-h-48 grid-cols-3 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-4">
+    {% for s in slots %}{% set mine = s.id == b.slot_id %}{% set left = s.capacity - s.booked %}
+    <label class="flex cursor-pointer flex-col items-center rounded-xl border p-1.5 text-center text-xs transition has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content {{ 'border-warning/60' if left <= 0 and not mine else 'border-base-300 hover:border-primary' }}">
+      <input type="radio" name="slot_id" value="{{ s.id }}" x-model="pick" class="hidden"><b class="tabular-nums">{{ s.starts_at }}</b>
+      <span class="opacity-80">{{ 'current' if mine else ('full · override' if left <= 0 else left ~ ' left') }}</span></label>{% endfor %}
+    <label class="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-base-300 p-1.5 text-xs has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content">
+      <input type="radio" name="slot_id" value="" x-model="pick" class="hidden">No time</label>
+  </div>
+  <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+    <label class="flex cursor-pointer items-center gap-2 text-xs"><input type="checkbox" name="notify" value="1" class="checkbox checkbox-xs checkbox-primary" checked>Tell them (email + WhatsApp)</label>
+    <button class="btn btn-primary btn-sm" :disabled="pick === '{{ b.slot_id or '' }}'"><i data-lucide="calendar-sync" class="size-4"></i>Move to this time</button></div>
+</form>
+{% endif %}
+
+{% if history or other_drives %}
+<div class="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
+  {% if history %}<div><div class="mb-1 text-xs font-bold uppercase opacity-60">Recent donations</div>
+    <ul class="space-y-1">{% for h in history %}<li class="flex items-center gap-2"><i data-lucide="droplet" class="size-3.5 text-primary"></i>{{ h.donated_on|nice_date }}</li>{% endfor %}</ul></div>{% endif %}
+  {% if other_drives %}<div><div class="mb-1 text-xs font-bold uppercase opacity-60">Also booked</div>
+    <ul class="space-y-1">{% for x in other_drives %}<li class="truncate">{{ x.drive_date|nice_date }} · {{ x.title }}</li>{% endfor %}</ul></div>{% endif %}
+</div>
+{% endif %}
+
+<div class="modal-action flex-wrap">
+  {% if donor and current_user.can('manage_donors') %}<a href="{{ url_for('donors.profile', i=donor.id) }}" class="btn btn-primary"><i data-lucide="user-round" class="size-4"></i>Open full donor profile</a>{% endif %}
+  <button type="button" class="btn" onclick="this.closest('dialog').close()">Close</button>
+</div>

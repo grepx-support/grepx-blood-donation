@@ -1,0 +1,171 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/public.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import vendor, for_widgets %}
+{% block title %}My dashboard · {{ org }}{% endblock %}
+{% block vendor %}{{ vendor('qr') }}{{ for_widgets(widgets) }}{% endblock %}
+{% block body %}
+{% set u = current_user %}{% set n = history|length %}
+<div class="mx-auto max-w-7xl px-4 py-10">
+  <div class="mb-8 flex flex-wrap items-end justify-between gap-4 rise">
+    <div><span class="text-sm font-bold uppercase tracking-widest text-primary">Donor dashboard</span>
+      <h1 class="mt-1 text-3xl font-extrabold md:text-4xl">Hi {{ u.first_name }} 👋</h1><p class="mt-1 opacity-70">{{ status.message }}</p></div>
+    <div class="flex flex-wrap gap-2"><a href="{{ url_for('donor.profile') }}" class="btn btn-ghost border-base-300"><i data-lucide="user-pen" class="size-5"></i>My details</a>
+      <a href="{{ url_for('public.index') }}#events" class="btn btn-primary shadow-lg shadow-primary/30"><i data-lucide="calendar-heart" class="size-5"></i>Find a drive</a></div>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+    {# Eligibility ring #}
+    <div class="card border border-base-300/60 bg-base-100 rise"><div class="card-body items-center text-center">
+      <h3 class="card-title text-base"><i data-lucide="timer" class="size-5 text-primary"></i>Next donation</h3>
+      <div class="radial-progress my-3 text-primary" style="--value:{{ status.pct }};--size:10rem;--thickness:.85rem" role="progressbar" aria-valuenow="{{ status.pct }}">
+        <div class="text-center text-base-content">{% if status.ready %}<div class="text-3xl font-extrabold">Ready</div><div class="text-xs opacity-60">to donate</div>
+          {% else %}<div class="text-4xl font-extrabold tabular-nums">{{ status.days_left }}</div><div class="text-xs opacity-60">days to go</div>{% endif %}</div></div>
+      <p class="text-sm opacity-70">{% if status.first %}Your first donation awaits!{% elif status.ready %}You're eligible now 🎉{% else %}Eligible on {{ status.next.strftime('%d %b %Y') }}{% endif %}</p>
+    </div></div>
+
+    {# Digital donor card #}
+    <div class="donor-card rounded-box p-6 text-white shadow-2xl shadow-rose-900/30 rise rise-2">
+      <div class="relative z-10 flex h-full flex-col">
+        <div class="flex items-start justify-between"><div class="flex items-center gap-2 font-bold"><i data-lucide="droplet" class="size-5"></i>{{ org }}</div>
+          <span class="rounded-xl bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wider">Donor card</span></div>
+        <div class="mt-6 flex items-end justify-between gap-4">
+          <div><div class="text-6xl font-black leading-none">{{ u.blood_group or '?' }}</div>
+            <a href="{{ url_for('donor.profile') }}" class="mt-3 flex items-center gap-2 text-lg font-bold" title="{{ 'Change photo' if u.photo_id else 'Add your photo' }}">
+              {{ ui.avatar(u.name, 'w-9 text-sm ring-2 ring-white/60', 'bg-white/25 text-white', u.photo_id) }}{{ u.name }}</a>
+            <div class="font-mono text-sm opacity-80">BC-{{ u.id|card_no }}</div></div>
+          <div class="w-24 rounded-xl bg-white p-2 [&_svg]:h-auto [&_svg]:w-full" x-data="qr('LIFEFLOW:DONOR:{{ u.id }}')" title="Show this at check-in"></div>
+        </div>
+        <div class="mt-auto pt-4 text-xs opacity-80">Show the QR code at the check-in desk</div>
+      </div>
+    </div>
+
+    {# Impact #}
+    <div class="card border border-base-300/60 bg-base-100 rise rise-3"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="heart-pulse" class="size-5 text-primary"></i>My impact</h3>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        {% for label, v in [('Donations', n), ('Lives touched', n * 3), ('Badges', badges|selectattr('1')|list|length)] %}
+        <div class="rounded-2xl bg-base-200/70 p-3"><div class="text-3xl font-extrabold tabular-nums" x-data="countUp({{ v }})" x-text="v">{{ v }}</div><div class="text-xs opacity-60">{{ label }}</div></div>{% endfor %}
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        {% for b, earned in badges %}
+        <div class="tooltip" data-tip="{{ b.title }} · {{ b.need }} donation{{ 's' if b.need > 1 }}">
+          <span class="grid size-12 place-items-center rounded-2xl {{ 'bg-linear-to-br from-amber-300 to-rose-500 text-white shadow-lg' if earned else 'bg-base-200 opacity-40' }}"><i data-lucide="{{ b.icon }}" class="size-6"></i></span></div>
+        {% endfor %}
+      </div>
+    </div></div>
+
+    {# My drives #}
+    <div class="card border border-base-300/60 bg-base-100 lg:col-span-2"><div class="card-body">
+      <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="card-title text-base"><i data-lucide="calendar-check" class="size-5 text-primary"></i>My upcoming drives</h3>
+        {{ ui.calendar_sync(feed_url) }}</div>
+      {% for m in mine %}
+      <div class="flex flex-wrap items-center gap-4 rounded-2xl p-3 hover:bg-base-200/60">
+        <div class="flex flex-col items-center rounded-xl bg-primary/10 px-3 py-1 text-primary"><b class="text-xl leading-none">{{ m.drive_date|day }}</b><span class="text-[10px] font-bold uppercase">{{ m.drive_date|month }}</span></div>
+        <div class="min-w-0 flex-1"><a class="font-semibold hover:text-primary" href="{{ url_for('public.drive', i=m.id) }}">{{ m.title }}</a><div class="truncate text-sm opacity-60">{{ m.venue }} · {% if m.slot_start %}<b class="text-primary">{{ m.slot_start }}–{{ m.slot_end }}</b>{% else %}{{ m.time_slot or 'All day' }}{% endif %}</div></div>
+        {{ ui.status_badge(m.status) }}
+        {% if m.slot_count %}<a class="btn btn-xs {{ 'btn-ghost border-base-300' if m.slot_start else 'btn-primary' }}" href="{{ url_for('public.drive', i=m.id) }}#book">{{ 'Change time' if m.slot_start else 'Pick a time' }}</a>{% endif %}
+        <a class="btn btn-ghost btn-sm btn-circle" title="Add to Google Calendar" target="_blank" rel="noopener" href="{{ m|gcal_drive(m.slot_start, m.slot_end) }}"><i data-lucide="calendar-plus" class="size-4"></i></a>
+        <form method="post" action="{{ url_for('public.cancel', i=m.id) }}">{{ ui.csrf() }}<button class="btn btn-ghost btn-sm btn-circle text-error" title="Cancel"><i data-lucide="x" class="size-4"></i></button></form>
+      </div>
+      {% else %}{% call ui.empty('calendar-plus', 'No drives yet', 'Register for an upcoming drive — it takes one tap.') %}{% endcall %}{% endfor %}
+    </div></div>
+
+    {# Recommended #}
+    <div class="card border border-base-300/60 bg-base-100"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="sparkles" class="size-5 text-primary"></i>Recommended for you</h3>
+      {% for d in recommended %}
+      <a href="{{ url_for('public.drive', i=d.id) }}" class="group flex items-center gap-3 rounded-2xl p-2 hover:bg-base-200/60">
+        <div class="drive-img size-14 shrink-0 rounded-xl" {% if d.image_url %}style="--img:url('{{ d.image_url|media }}')"{% endif %}></div>
+        <div class="min-w-0"><div class="truncate font-semibold group-hover:text-primary">{{ d.title }}</div><div class="text-xs opacity-60">{{ d.drive_date|nice_date }}</div></div></a>
+      {% else %}<p class="text-sm opacity-60">You're registered for every upcoming drive. Legend! 🏆</p>{% endfor %}
+    </div></div>
+
+    {% if my_tasks %}
+    <div class="card border border-warning/40 bg-base-100 md:col-span-2 lg:col-span-3"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="clipboard-list" class="size-5 text-warning"></i>Tasks assigned to you <span class="badge badge-warning">{{ my_tasks|length }}</span></h3>
+      {% for t in my_tasks %}
+      <div class="flex flex-wrap items-center gap-3 rounded-2xl p-2 hover:bg-base-200/60">
+        <div class="min-w-0 flex-1"><div class="font-semibold">{{ t.title }} {% if t.important %}<i data-lucide="flame" class="inline size-4 text-error"></i>{% endif %}</div>
+          <div class="text-xs opacity-60">{{ t.drive_title or 'General' }}{% if t.due_at %} · due {{ t.due_at|replace('T', ' ') }}{% endif %}</div>
+          {% if t.description %}<div class="text-sm opacity-70">{{ t.description }}</div>{% endif %}</div>
+        <form method="post" action="{{ url_for('my_tasks.status', i=t.id) }}" class="join">{{ ui.csrf() }}
+          {% for k, l in statuses.items() %}<button name="status" value="{{ k }}" class="join-item btn btn-xs {{ 'btn-primary' if t.status == k else '' }}">{{ l }}</button>{% endfor %}</form>
+      </div>{% endfor %}
+    </div></div>
+    {% endif %}
+
+    {# Invite friends #}
+    <div class="card overflow-hidden border border-base-300/60 bg-base-100 lg:col-span-2" x-data="{ link: {{ invite.link|tojson|forceescape }} }"><div class="card-body">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div><h3 class="card-title text-base"><i data-lucide="gift" class="size-5 text-primary"></i>Invite friends, save more lives</h3>
+          <p class="text-sm opacity-60">+1 point when a friend joins with your link, +2 more when they donate.</p></div>
+        {% if invite.rank %}<span class="badge badge-lg badge-primary gap-1"><i data-lucide="trophy" class="size-4"></i>Rank #{{ invite.rank }}</span>{% endif %}
+      </div>
+      <div class="mt-2 grid grid-cols-3 gap-2 text-center">
+        {% for label, v in [('Friends joined', invite.joined), ('Friends donated', invite.donated), ('Points', invite.points)] %}
+        <div class="rounded-2xl bg-base-200/70 p-3"><div class="text-2xl font-extrabold tabular-nums">{{ v }}</div><div class="text-xs opacity-60">{{ label }}</div></div>{% endfor %}
+      </div>
+      <label class="input mt-3 w-full"><i data-lucide="link" class="size-4 opacity-50"></i><input readonly :value="link" class="grow text-sm" @focus="$el.select()">
+        <button class="btn btn-primary btn-xs" @click.prevent="ui.copy(link, 'Invite link copied!')">Copy</button></label>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <a class="btn btn-success btn-soft btn-sm" target="_blank" rel="noopener" href="https://wa.me/?text={{ ('I just signed up to donate blood with ' ~ org ~ ' — join me and save lives too! 🩸\n\n' ~ invite.link)|urlencode }}"><i data-lucide="message-circle" class="size-4"></i>Share on WhatsApp</a>
+        {{ ui.share(invite.link, org, 'I just signed up to donate blood with ' ~ org ~ ' — join me and save lives too! 🩸', 'btn-ghost btn-sm border-base-300', 'More…') }}
+      </div>
+    </div></div>
+
+    <div class="card border border-base-300/60 bg-base-100"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="users-round" class="size-5 text-primary"></i>Invite leaderboard</h3>
+      <ol class="space-y-1.5">{% for l in leaders %}
+        <li class="flex items-center gap-3 rounded-xl p-1.5 {{ 'bg-primary/10' if l.name == current_user.name }}">
+          <span class="grid size-8 place-items-center rounded-full text-sm font-bold {{ ['bg-amber-400 text-white', 'bg-slate-300 text-slate-800', 'bg-orange-300 text-white'][loop.index0] if loop.index0 < 3 else 'bg-base-200' }}">{{ loop.index }}</span>
+          <span class="flex-1 truncate font-semibold">{{ l.name.split()[0] }}{{ ' (you)' if l.name == current_user.name }}</span><span class="text-sm opacity-60">{{ l.points }} pts</span></li>
+      {% else %}<li class="text-sm opacity-60">No invites yet — be the first on the board! 🏆</li>{% endfor %}</ol>
+    </div></div>
+
+    {# Certificates + rewards #}
+    {% if certificates or vouchers %}
+    <div class="card border border-base-300/60 bg-base-100 md:col-span-2 lg:col-span-3"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="award" class="size-5 text-primary"></i>My certificates & rewards</h3>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div class="space-y-2">{% for c in certificates %}
+          <div class="flex items-center gap-3 rounded-2xl border border-base-300/60 p-3">
+            <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><i data-lucide="award" class="size-6"></i></span>
+            <div class="min-w-0 flex-1"><div class="truncate font-semibold">{{ c.title or 'Blood donation' }}</div><div class="text-xs opacity-60">{{ c.donated_on|nice_date }}</div></div>
+            <a href="{{ url_for('completion.view', code=c.id) }}" class="btn btn-primary btn-sm">View</a>
+            <a href="{{ url_for('completion.image', code=c.id) }}" download class="btn btn-ghost btn-sm btn-square border-base-300" title="Download"><i data-lucide="download" class="size-4"></i></a>
+          </div>{% else %}<p class="text-sm opacity-60">Your certificates appear here after each drive.</p>{% endfor %}</div>
+        <div class="space-y-2">{% for v in vouchers %}{% set expired = v.expires_on and v.expires_on < today_iso %}
+          <div class="rounded-2xl border-2 border-dashed p-3 {{ 'border-base-300 opacity-60' if expired else 'border-primary/50 bg-primary/5' }}" x-data>
+            <div class="flex items-start gap-3"><i data-lucide="gift" class="mt-0.5 size-5 text-primary"></i>
+              <div class="min-w-0 flex-1"><div class="font-semibold">{{ v.title }}{% if v.partner %} <span class="font-normal opacity-60">· {{ v.partner }}</span>{% endif %}</div>
+                {% if v.details %}<div class="text-sm opacity-70">{{ v.details }}</div>{% endif %}
+                <div class="mt-1 text-xs opacity-60">{{ 'Expired' if expired else ('Valid until ' ~ v.expires_on|nice_date if v.expires_on else 'No expiry') }}{{ ' · from ' ~ v.drive_title if v.drive_title }}</div></div></div>
+            {% if v.code %}<div class="mt-2 flex items-center gap-2"><code class="flex-1 rounded-lg bg-base-200 px-3 py-1.5 font-mono text-lg tracking-wider">{{ v.code }}</code>
+              <button type="button" class="btn btn-sm" @click="ui.copy({{ v.code|tojson|forceescape }}, 'Code copied!')">Copy</button></div>{% endif %}
+          </div>{% endfor %}</div>
+      </div>
+    </div></div>
+    {% endif %}
+
+    {# History timeline #}
+    <div class="card border border-base-300/60 bg-base-100 md:col-span-2 lg:col-span-3"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="history" class="size-5 text-primary"></i>Donation history</h3>
+      {% if history %}<ol class="relative ml-3 border-l-2 border-primary/30">{% for h in history %}
+        <li class="mb-6 ml-6 last:mb-0"><span class="absolute -left-[13px] grid size-6 place-items-center rounded-full bg-primary text-primary-content ring-4 ring-base-100"><i data-lucide="droplet" class="size-3.5"></i></span>
+          <time class="text-sm opacity-60">{{ h.donated_on|nice_date }}</time><div class="font-semibold">{{ h.title or 'Blood donation' }}</div><div class="text-sm opacity-60">{{ h.venue or '' }}{{ ' · ' if h.venue }}{{ h.units }} unit</div></li>{% endfor %}</ol>
+      {% else %}{% call ui.empty('droplet', 'Your story starts here', 'After your first donation it will appear on this timeline.') %}{% endcall %}{% endif %}
+    </div></div>
+  </div>
+
+  {% if widgets %}
+  <h2 class="mb-4 mt-12 flex items-center gap-2 text-2xl font-extrabold"><i data-lucide="chart-pie" class="size-6 text-primary"></i>Community insights</h2>
+  <div class="grid gap-5 lg:grid-cols-3">{% for w in widgets %}{{ ui.widget(w) }}{% endfor %}</div>
+  {% endif %}
+</div>
+{% endblock %}

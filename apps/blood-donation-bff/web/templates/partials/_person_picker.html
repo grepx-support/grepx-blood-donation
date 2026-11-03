@@ -1,0 +1,21 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{# Person picker UI. Needs x-data="personPicker()" (own value) or personPicker(true) (bound to task `t`) on a parent. #}
+<div class="relative mt-1" @click.outside="openList = false">
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="badge badge-lg gap-1" :class="pickedId ? 'badge-primary' : 'badge-warning'"><i data-lucide="user-round" class="size-3.5"></i><span x-text="pickedName"></span></span>
+    <button type="button" class="btn btn-ghost btn-xs" @click="pick({{ current_user.id|tojson|forceescape }}, {{ current_user.name|tojson|forceescape }})">Me</button>
+    <button type="button" class="btn btn-ghost btn-xs" @click="pick('', 'Unassigned')">Unassigned</button>
+  </div>
+  <label class="input input-sm mt-2 w-full"><i data-lucide="search" class="size-4 opacity-50"></i>
+    <input x-model="q" @input.debounce.250ms="search()" @focus="search()" class="grow" placeholder="Search anyone: name, email or phone (admin, volunteer or donor)" autocomplete="off"></label>
+  <ul x-show="openList && results.length" x-cloak class="menu absolute z-50 mt-1 max-h-64 w-full flex-nowrap overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-xl">
+    <template x-for="p in results" :key="p.id"><li><a @click="pick(p.id, p.name)" class="flex justify-between">
+      <span><b x-text="p.name"></b> <span class="text-xs opacity-60" x-text="p.email"></span></span>
+      <span class="badge badge-sm capitalize" :class="{ 'badge-primary': p.role === 'admin', 'badge-secondary': p.role === 'volunteer' }" x-text="p.role"></span></a></li></template>
+  </ul>
+</div>

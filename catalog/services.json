@@ -1,0 +1,583 @@
+[
+  {
+    "name": "audit-log-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/audit-log-service",
+    "request_table": "audit_log",
+    "actions": [
+      "RECORD"
+    ],
+    "reasons": [],
+    "other_tables": [],
+    "summary": "Append-only audit trail of business decisions. Keywords: audit, compliance, history",
+    "routes": [
+      "record"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "booking-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/booking-service",
+    "request_table": "booking_requests",
+    "actions": [
+      "BOOK",
+      "CANCEL",
+      "CHECK_IN",
+      "INTEREST",
+      "MARK",
+      "MOVE"
+    ],
+    "reasons": [
+      "ALREADY_ATTENDED",
+      "EVENT_CLOSED",
+      "INVALID_STATE",
+      "MISSING_FIELD",
+      "NOT_EVENT_DAY",
+      "NOT_REGISTERED",
+      "SLOT_FULL",
+      "SLOT_REQUIRED",
+      "UNKNOWN_EVENT",
+      "UNKNOWN_SLOT"
+    ],
+    "other_tables": [
+      "bookings"
+    ],
+    "summary": "Interest, bookings, cancel, move, check-in, attendance (attended / no-show / not eligible); event reminders; closes events. Keywords: rsvp, attendance, kiosk, walk-in",
+    "routes": [
+      "book",
+      "cancel",
+      "check_in",
+      "interest",
+      "mark",
+      "move"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "campaign-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/campaign-service",
+    "request_table": "campaign_requests",
+    "actions": [
+      "ANNOUNCE",
+      "BROADCAST",
+      "INVITE",
+      "PUBLISH_SOCIAL",
+      "TEST_SOCIAL"
+    ],
+    "reasons": [],
+    "other_tables": [
+      "social_posts"
+    ],
+    "summary": "Announcements, filtered invitations, broadcasts and social posts to audiences. Keywords: campaign, marketing, broadcast, audience",
+    "routes": [
+      "announce",
+      "broadcast",
+      "invite",
+      "publish_social",
+      "test_social"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "checklist-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/checklist-service",
+    "request_table": "checklist_requests",
+    "actions": [
+      "APPLY",
+      "REMOVE",
+      "SEED_TEMPLATE"
+    ],
+    "reasons": [
+      "MISSING_FIELD",
+      "UNKNOWN_TEMPLATE"
+    ],
+    "other_tables": [
+      "checklist_templates"
+    ],
+    "summary": "Reusable checklists (playbooks) applied to any target as dated tasks; idempotent. Keywords: playbook, template tasks",
+    "routes": [
+      "apply",
+      "remove",
+      "seed_template"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "event-report-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/event-report-service",
+    "request_table": "event_report_requests",
+    "actions": [
+      "SAVE_RETRO",
+      "SNAPSHOT"
+    ],
+    "reasons": [],
+    "other_tables": [
+      "event_reports"
+    ],
+    "summary": "Event outcome stats (funnel, fill and show rate, optional breakdown) and retrospectives. Keywords: report, retro, analytics",
+    "routes": [
+      "save_retro",
+      "snapshot"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "event-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/event-service",
+    "request_table": "event_requests",
+    "actions": [
+      "CLONE",
+      "COMPLETE",
+      "CREATE",
+      "REOPEN",
+      "SET_IMAGES",
+      "UPDATE"
+    ],
+    "reasons": [
+      "ALREADY_COMPLETED",
+      "INVALID_CAPACITY",
+      "INVALID_DATE",
+      "MISSING_FIELD",
+      "NOT_COMPLETED",
+      "TOO_EARLY",
+      "TOO_MANY_IMAGES",
+      "UNKNOWN_EVENT"
+    ],
+    "other_tables": [
+      "events"
+    ],
+    "summary": "Events: create/edit/clone, pictures, complete/reopen; optional time slots and checklist. Keywords: event, session, workshop, class, camp",
+    "routes": [
+      "clone",
+      "complete",
+      "create",
+      "reopen",
+      "set_images",
+      "update"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "access-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/identity/access-service",
+    "request_table": "access_requests",
+    "actions": [
+      "DELETE_ROLE",
+      "REGISTER_PERMISSION",
+      "SAVE_ROLE",
+      "SET_PERMISSION",
+      "SET_ROLE",
+      "SET_STAFF_ROLE"
+    ],
+    "reasons": [
+      "LAST_ADMIN",
+      "MISSING_FIELD",
+      "SELF_DEMOTION",
+      "UNKNOWN_PERMISSION",
+      "UNKNOWN_ROLE",
+      "UNKNOWN_STAFF_ROLE"
+    ],
+    "other_tables": [],
+    "summary": "Role ladder (from config roles:), volunteer roles, permission catalogue, personal permissions, effective permissions. Keywords: rbac, authorization, staff",
+    "routes": [
+      "delete_role",
+      "register_permission",
+      "save_role",
+      "set_permission",
+      "set_role",
+      "set_staff_role"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "auth-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/identity/auth-service",
+    "request_table": "auth_requests",
+    "actions": [
+      "CHANGE_PASSWORD",
+      "LINK_EXTERNAL",
+      "LOGIN",
+      "LOGIN_EXTERNAL",
+      "REGISTER",
+      "RESET_CONFIRM",
+      "RESET_REQUEST",
+      "SET_PASSWORD"
+    ],
+    "reasons": [
+      "EMAIL_TAKEN",
+      "INVALID_CREDENTIALS",
+      "INVALID_TOKEN",
+      "MISSING_FIELD",
+      "PROVIDER_NOT_CONFIGURED",
+      "UNKNOWN_PROVIDER",
+      "UNKNOWN_USER",
+      "WEAK_PASSWORD"
+    ],
+    "other_tables": [],
+    "summary": "Login credentials, sessions (JWT), password change/reset links. Keywords: login, password, token, authentication",
+    "routes": [
+      "change_password",
+      "link_external",
+      "login",
+      "login_external",
+      "register",
+      "reset_confirm",
+      "reset_request",
+      "set_password"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "media-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/media-service",
+    "request_table": "media_requests",
+    "actions": [
+      "DELETE",
+      "PROCESS"
+    ],
+    "reasons": [
+      "MISSING_FILE",
+      "NOT_AN_IMAGE",
+      "TOO_LARGE",
+      "UNKNOWN_KIND",
+      "UNKNOWN_MEDIA"
+    ],
+    "other_tables": [
+      "media"
+    ],
+    "summary": "Image uploads \u2192 resized WebP in local/S3 storage. Keywords: image, photo, upload, picture, avatar",
+    "routes": [
+      "delete",
+      "process"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "notification-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/notification-service",
+    "request_table": "notifications",
+    "actions": [
+      "SEND",
+      "TEST_CHANNEL"
+    ],
+    "reasons": [
+      "CHECK_FAILED",
+      "MISSING_RECIPIENT",
+      "NOT_CONFIGURED",
+      "UNKNOWN_TEMPLATE"
+    ],
+    "other_tables": [],
+    "summary": "Sends email/SMS/WhatsApp from templates with admin on/off + channel settings; circuit breaker per channel. Keywords: message, email, sms, whatsapp",
+    "routes": [
+      "send",
+      "test_channel"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "people-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/people-service",
+    "request_table": "people_requests",
+    "actions": [
+      "CREATE",
+      "RESET_CAL_TOKEN",
+      "SET_PHOTO",
+      "UPDATE"
+    ],
+    "reasons": [
+      "EMAIL_TAKEN",
+      "INVALID_EMAIL",
+      "INVALID_NAME",
+      "INVALID_PHONE",
+      "MISSING_FIELD",
+      "UNKNOWN_PERSON"
+    ],
+    "other_tables": [
+      "people"
+    ],
+    "summary": "Generic person records: name, email, phone, photo, invite/referral code, calendar token; product fields via a profile plugin. Keywords: person, profile, contact, member",
+    "routes": [
+      "create",
+      "reset_cal_token",
+      "set_photo",
+      "update"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "questionnaire-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/questionnaire-service",
+    "request_table": "questionnaire_requests",
+    "actions": [
+      "CHAT",
+      "CHECK",
+      "CRITERIA"
+    ],
+    "reasons": [],
+    "other_tables": [],
+    "summary": "Screening questionnaires and chat flows; the rules come from the product. Keywords: screening, chatbot, quiz, eligibility",
+    "routes": [
+      "chat",
+      "check",
+      "criteria",
+      "rules"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "recognition-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/recognition-service",
+    "request_table": "recognition_requests",
+    "actions": [
+      "ISSUE"
+    ],
+    "reasons": [],
+    "other_tables": [
+      "certificates",
+      "vouchers"
+    ],
+    "summary": "Certificates and vouchers for people who attended a completed event. Keywords: certificate, voucher, reward",
+    "routes": [
+      "issue"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "referral-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/referral-service",
+    "request_table": "referral_events",
+    "actions": [
+      "SCORE"
+    ],
+    "reasons": [],
+    "other_tables": [
+      "referral_scores"
+    ],
+    "summary": "Invite-a-friend points (weights in config) and leaderboard. Keywords: referral, leaderboard, invite",
+    "routes": [
+      "score"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "scheduler-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/scheduler-service",
+    "request_table": "schedule_requests",
+    "actions": [
+      "CANCEL",
+      "REGISTER"
+    ],
+    "reasons": [
+      "INVALID_SCHEDULE",
+      "MISSING_FIELD"
+    ],
+    "other_tables": [
+      "schedules",
+      "ticks"
+    ],
+    "summary": "Recurring/daily schedules that emit ticks to target services. Keywords: cron, job, reminder, timer",
+    "routes": [
+      "cancel",
+      "register"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "settings-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/settings-service",
+    "request_table": "settings_requests",
+    "actions": [
+      "DELETE",
+      "SET"
+    ],
+    "reasons": [],
+    "other_tables": [
+      "app_settings"
+    ],
+    "summary": "Admin-editable settings (integrations, message policies, screen options); secrets stay sealed. Keywords: settings, configuration, integrations, credentials, smtp, twilio, api keys",
+    "routes": [
+      "delete",
+      "set"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "slot-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/slot-service",
+    "request_table": "slot_requests",
+    "actions": [
+      "GENERATE",
+      "SET_ALL",
+      "SET_CAPACITY"
+    ],
+    "reasons": [
+      "BELOW_BOOKED",
+      "HAS_BOOKINGS",
+      "INVALID_PLAN",
+      "TOO_HIGH",
+      "UNKNOWN_SLOT"
+    ],
+    "other_tables": [
+      "slots"
+    ],
+    "summary": "Time slots per event with capacity rules. Keywords: booking slots, capacity, appointment",
+    "routes": [
+      "generate",
+      "set_all",
+      "set_capacity"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "task-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/task-service",
+    "request_table": "task_requests",
+    "actions": [
+      "CHANGE_STATUS",
+      "CLAIM",
+      "CREATE",
+      "DELETE",
+      "UPDATE"
+    ],
+    "reasons": [
+      "ALREADY_ASSIGNED",
+      "INVALID_STATE",
+      "MISSING_FIELD",
+      "NOT_ALLOWED",
+      "UNKNOWN_TASK"
+    ],
+    "other_tables": [
+      "tasks",
+      "ticks"
+    ],
+    "summary": "Tasks with owners, due dates, board states, history; due-soon reminders. Keywords: todo, planning, kanban, reminder",
+    "routes": [
+      "change_status",
+      "claim",
+      "create",
+      "delete",
+      "update"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "template-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/template-service",
+    "request_table": "templates",
+    "actions": [
+      "RESET",
+      "SAVE",
+      "SEED"
+    ],
+    "reasons": [
+      "MISSING_FIELD",
+      "UNKNOWN_CHANNEL",
+      "UNKNOWN_PLACEHOLDER",
+      "UNKNOWN_TEMPLATE"
+    ],
+    "other_tables": [
+      "message_settings",
+      "message_templates"
+    ],
+    "summary": "Message templates per product + admin custom wording with safe {placeholders}. Keywords: wording, automatic messages",
+    "routes": [
+      "reset",
+      "save",
+      "seed"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "donation-service",
+    "layer": "product",
+    "product": "blood-donation",
+    "path": "product-services/blood-donation/donation-service",
+    "request_table": "donation_requests",
+    "actions": [
+      "RECORD",
+      "VOID"
+    ],
+    "reasons": [
+      "INVALID_DATE",
+      "INVALID_UNITS",
+      "UNKNOWN_DONATION",
+      "UNKNOWN_DONOR"
+    ],
+    "other_tables": [
+      "donations",
+      "donor_stats"
+    ],
+    "summary": "Donation records, donor stats (next eligible date, badges), eligible-again reminders. Keywords: history, eligibility countdown",
+    "routes": [
+      "record",
+      "void"
+    ],
+    "reacts_to": []
+  },
+  {
+    "name": "donor-service",
+    "layer": "product",
+    "product": "blood-donation",
+    "path": "product-services/blood-donation/donor-service",
+    "request_table": "donor_requests",
+    "actions": [
+      "DELETE_SEGMENT",
+      "SAVE_SEGMENT",
+      "STAGE_IMPORT_ROW",
+      "UPDATE_IMPORT_ROW"
+    ],
+    "reasons": [
+      "INVALID_ROW",
+      "MISSING_NAME",
+      "UNKNOWN_ROW",
+      "UNKNOWN_SEGMENT"
+    ],
+    "other_tables": [
+      "donor_segments",
+      "import_rows"
+    ],
+    "summary": "Blood donor staff tools: saved donor-grid groups and the Excel import review queue (the donor record itself is people-service + plugins/blood_profile). Keywords: donor, segment, import",
+    "routes": [
+      "import_rows",
+      "segments"
+    ],
+    "reacts_to": []
+  }
+]

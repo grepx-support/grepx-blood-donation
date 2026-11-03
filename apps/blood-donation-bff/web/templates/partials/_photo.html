@@ -1,0 +1,26 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{# Photo editor: big avatar, tap to choose a new photo (uploads at once), remove link.
+   photo_editor(person, upload_url, remove_url, size) — person needs name + photo_id. #}
+{% import "partials/_ui.html" as ui with context %}
+{% macro photo_editor(person, upload_url, remove_url, size='w-24 text-3xl') %}
+<div class="flex flex-col items-center gap-1.5" x-data="{ preview: '', busy: false }">
+  <form method="post" action="{{ upload_url }}" enctype="multipart/form-data" x-ref="f">{{ ui.csrf() }}
+    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" x-ref="file"
+           @change="const f = $event.target.files[0]; if (!f) return; if (f.size > 15 * 1024 * 1024) { ui.toast('That photo is larger than 15 MB', 'error'); return }
+                    preview = URL.createObjectURL(f); busy = true; $refs.f.submit()">
+    <button type="button" @click="$refs.file.click()" class="group relative block rounded-full" title="Change photo">
+      <template x-if="preview"><div class="avatar"><div class="{{ size }} rounded-full"><img :src="preview" alt=""></div></div></template>
+      <div x-show="!preview">{{ ui.avatar(person.name, size, 'bg-primary text-primary-content', person.photo_id) }}</div>
+      <span class="absolute inset-0 grid place-items-center rounded-full bg-black/45 text-white opacity-0 transition group-hover:opacity-100" :class="busy && 'opacity-100'">
+        <span x-show="busy" class="loading loading-spinner"></span><i x-show="!busy" data-lucide="camera" class="size-6"></i></span>
+    </button>
+  </form>
+  <span class="text-xs opacity-60">{{ 'Tap to change' if person.photo_id else 'Add a photo' }}</span>
+  {% if person.photo_id %}<form method="post" action="{{ remove_url }}" onsubmit="return confirm('Remove this photo?')">{{ ui.csrf() }}
+    <button class="link text-xs text-error">Remove</button></form>{% endif %}
+</div>{% endmacro %}

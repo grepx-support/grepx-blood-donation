@@ -1,0 +1,30 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/public.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Certificate · {{ c.name }} · {{ org }}{% endblock %}
+{% block meta %}<meta property="og:site_name" content="{{ org }}"><meta property="og:title" content="🏅 {{ c.name }} donated blood{{ ' at ' ~ c.title if c.title }}">
+<meta property="og:description" content="Certificate of appreciation from {{ org }}. One donation can save up to three lives.">
+<meta property="og:image" content="{{ png }}"><meta property="og:image:width" content="1754"><meta property="og:image:height" content="1240">
+<meta property="og:url" content="{{ link }}"><meta name="twitter:card" content="summary_large_image">{% endblock %}
+{% block body %}
+<div class="mx-auto max-w-5xl px-4 py-10">
+  <div class="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
+    <div><div class="text-sm font-semibold uppercase tracking-wider text-primary">Certificate of appreciation</div>
+      <h1 class="text-3xl font-extrabold">{{ c.name }}</h1>
+      <p class="mt-1 flex items-center gap-2 text-sm text-success"><i data-lucide="badge-check" class="size-4"></i>Verified · issued by {{ org }} · {{ c.donated_on|nice_date }}</p></div>
+    <div class="flex flex-wrap gap-2">
+      <a href="{{ url_for('completion.image', code=c.id) }}" download="certificate-{{ c.name|replace(' ', '-') }}.png" class="btn btn-primary"><i data-lucide="download" class="size-4"></i>Download</a>
+      <button type="button" class="btn btn-ghost border-base-300" onclick="window.print()"><i data-lucide="printer" class="size-4"></i>Print / PDF</button>
+      {{ ui.share(link, 'My blood donation certificate', '🏅 I donated blood' ~ (' at ' ~ c.title if c.title else '') ~ ' with ' ~ org ~ '! One donation can save up to three lives — join me 💪 #BloodDonation #SaveLives', 'btn-ghost border-base-300', 'Share', url_for('completion.image', code=c.id)) }}
+    </div>
+  </div>
+  <img src="{{ url_for('completion.image', code=c.id) }}" alt="Certificate of appreciation for {{ c.name }}" class="w-full rounded-box border border-base-300/60 shadow-2xl rise">
+  <p class="mt-4 text-center text-xs opacity-60 print:hidden">Certificate number {{ c.id[:8]|upper }} · Anyone with this link can check it is genuine.</p>
+</div>
+<style>@media print { header, footer, .print\:hidden { display: none !important } body { background: #fff } }</style>
+{% endblock %}

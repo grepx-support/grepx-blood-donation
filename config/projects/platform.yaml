@@ -1,0 +1,3 @@
+# Settings for the common services (shared by every product). Overrides config/common.yaml.
+# database:
+#   url: postgresql://grepx:grepx@127.0.0.1:5432/{service_db}

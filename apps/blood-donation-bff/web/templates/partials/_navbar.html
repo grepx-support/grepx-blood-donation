@@ -1,0 +1,47 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% import "partials/_ui.html" as ui with context %}
+{% macro links() %}
+<li><a href="{{ url_for('public.index') }}#events"><i data-lucide="calendar-heart" class="size-4"></i>Drives</a></li>
+<li><a href="{{ url_for('public.eligibility') }}"><i data-lucide="stethoscope" class="size-4"></i>Eligibility</a></li>
+<li><a href="{{ url_for('public.index') }}#impact"><i data-lucide="chart-pie" class="size-4"></i>Impact</a></li>
+<li><a href="{{ url_for('public.index') }}#faq"><i data-lucide="circle-help" class="size-4"></i>FAQ</a></li>
+{% endmacro %}
+<header class="sticky top-0 z-40 border-b border-base-300/50 bg-base-100/70 backdrop-blur-xl">
+  {# Plain flex row (not navbar-start/center/end) so the links can never slide under the buttons on the right. #}
+  <div class="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
+    <div class="flex min-w-0 flex-1 items-center gap-1 xl:flex-none">
+      <div class="dropdown xl:hidden">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle" aria-label="Open menu"><i data-lucide="menu" class="size-5"></i></div>
+        <ul tabindex="0" class="menu dropdown-content z-50 mt-3 w-60 rounded-box bg-base-100 p-2 shadow-xl">{{ links() }}
+          {% if not current_user.is_authenticated %}<li><a href="{{ url_for('auth.login') }}"><i data-lucide="log-in" class="size-4"></i>Log in</a></li>{% endif %}</ul>
+      </div>
+      {{ ui.brand('min-w-0') }}
+    </div>
+    <nav class="hidden min-w-0 flex-1 justify-center xl:flex"><ul class="menu menu-horizontal flex-nowrap gap-1 font-medium whitespace-nowrap">{{ links() }}</ul></nav>
+    <div class="ml-auto flex shrink-0 items-center gap-1.5 xl:ml-0">
+      {{ ui.palette_button() }}{{ ui.theme_toggle() }}
+      {% if current_user.is_authenticated %}
+      {% if current_user.is_staff %}<a class="btn btn-primary btn-sm hidden sm:inline-flex" href="{{ url_for('admin.home') }}"><i data-lucide="layout-dashboard" class="size-4"></i>Workspace</a>
+      {% else %}<a class="btn btn-primary btn-sm hidden sm:inline-flex" href="{{ url_for('donor.dashboard') }}"><i data-lucide="heart" class="size-4"></i>My dashboard</a>{% endif %}
+      <a class="btn btn-ghost btn-sm hidden 2xl:inline-flex" href="{{ url_for('auth.logout') }}"><i data-lucide="log-out" class="size-4"></i>Log out</a>
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle">{{ ui.avatar(current_user.name, 'w-9', 'bg-primary text-primary-content', current_user.photo_id) }}</div>
+        <ul tabindex="0" class="menu dropdown-content z-50 mt-3 w-60 rounded-box bg-base-100 p-2 shadow-xl">
+          <li class="menu-title">{{ current_user.name }} · <span class="capitalize">{{ current_user.role }}</span></li>
+          <li><a href="{{ url_for('donor.dashboard') }}"><i data-lucide="heart" class="size-4"></i>My donor dashboard</a></li>
+          {% if current_user.is_staff %}<li><a href="{{ url_for('admin.home') }}"><i data-lucide="layout-dashboard" class="size-4"></i>Workspace</a></li>{% endif %}
+          <li><a href="{{ url_for('auth.logout') }}"><i data-lucide="log-out" class="size-4"></i>Log out</a></li>
+        </ul>
+      </div>
+      {% else %}
+      <a class="btn btn-ghost btn-sm hidden sm:inline-flex" href="{{ url_for('auth.login') }}">Log in</a>
+      <a class="btn btn-primary btn-sm shadow-lg shadow-primary/30" href="{{ url_for('auth.register') }}"><span class="sm:hidden">Join</span><span class="hidden sm:inline">Become a donor</span></a>
+      {% endif %}
+    </div>
+  </div>
+</header>

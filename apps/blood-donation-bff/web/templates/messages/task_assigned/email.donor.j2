@@ -1,0 +1,12 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+Subject: {{ by.first_name }} asked for your help: {{ task.title }}
+<h2 style="margin:0 0 8px">Hi {{ r.first_name }}, can you help?</h2>
+<p><b>{{ task.title }}</b>{% if task.due_at %}<br>⏰ by {{ task.due_at|replace('T', ' ') }}{% endif %}</p>
+<p>{{ task.description or '' }}</p>
+<p>Update it any time from your dashboard (To do → In progress → Done).</p>
+<p><a href="{{ site }}/dashboard" style="display:inline-block;background:#e11d48;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700">Open my dashboard</a></p>

@@ -1,0 +1,14 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+<!doctype html><html><body style="margin:0;background:#faf5f5;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1c1917">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 12px">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.06)">
+<tr><td style="background:linear-gradient(135deg,#e11d48,#881337);padding:28px 32px;color:#fff;font-size:20px;font-weight:800">🩸 {{ org }}</td></tr>
+<tr><td style="padding:32px;font-size:15px;line-height:1.6">{{ body|safe }}</td></tr>
+<tr><td style="padding:18px 32px;background:#fff1f2;color:#9f1239;font-size:12px">One donation can save up to three lives. Thank you for being part of {{ org }}.</td></tr>
+<tr><td style="padding:14px 32px;color:#78716c;font-size:11px;text-align:center">© {{ year or '' }} <a href="{{ company_url }}" style="color:#78716c">{{ company }}</a> · <a href="{{ company_url }}" style="color:#78716c">{{ company_url|replace('https://', '')|replace('http://', '')|trim('/') }}</a> · All rights reserved.<br>Designed &amp; developed by <a href="{{ company_url }}" style="color:#78716c">{{ company }}</a></td></tr>
+</table></td></tr></table></body></html>

@@ -1,0 +1,8 @@
+service_name: donor-service
+snapshot_table: donor_requests
+description: "Blood donor staff tools: saved donor-grid groups and the Excel import review queue (the donor record itself is people-service + plugins/blood_profile). Keywords: donor, segment, import"
+project: blood-donation
+owns: [donor_segments, import_rows]  # tables this service is the system of record for (kept in its own database)
+tables:            # created in this service's own database by setup.sh (table: [indexed fields])
+  donor_segments: []
+  import_rows: [batch]

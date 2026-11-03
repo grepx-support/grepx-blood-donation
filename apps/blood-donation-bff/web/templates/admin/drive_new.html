@@ -1,0 +1,96 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}New drive · {{ org }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Create a drive', 'It goes live on the website as soon as you publish.', 'calendar-plus') %}{% endcall %}
+{% if lesson %}
+<div role="alert" class="alert alert-soft alert-info mb-6 items-start rise"><i data-lucide="lightbulb" class="size-5"></i>
+  <div><h3 class="font-bold">Lessons from “{{ lesson.title }}”</h3>
+    {% if lesson.to_improve %}<p class="mt-1 whitespace-pre-line text-sm"><b>To improve:</b> {{ lesson.to_improve }}</p>{% endif %}
+    {% if lesson.actions %}<p class="mt-1 whitespace-pre-line text-sm"><b>Actions:</b> {{ lesson.actions }}</p>{% endif %}
+    <a class="link text-sm" href="{{ url_for('reports.view', i=lesson.drive_id) }}">Open full retro →</a></div></div>
+{% endif %}
+{% set ss = src_slots %}
+<div class="mb-5 flex flex-wrap items-center gap-3 rounded-box border border-base-300/60 bg-base-100 p-3">
+  <i data-lucide="copy-plus" class="size-5 text-primary"></i><span class="font-semibold">Start from an existing drive</span>
+  <select class="select select-sm w-full max-w-sm" onchange="location.href = this.value ? '?from=' + this.value : '?'">
+    <option value="">— blank form —</option>{% for d in all_drives %}<option value="{{ d.id }}" {{ 'selected' if src and src.id == d.id }}>{{ d.title }} · {{ d.drive_date }} · {{ d.venue }}</option>{% endfor %}</select>
+  {% if src %}<span class="text-sm opacity-70">Venue, details, times{{ ', pictures' if src.image_url }} copied — pick the new date.</span>{% endif %}
+</div>
+<div class="grid gap-6 lg:grid-cols-5" x-data="{ title: {{ (src.title if src else '')|tojson|forceescape }}, venue: {{ (src.venue if src else '')|tojson|forceescape }}, date: '{{ suggested }}', today: '{{ today_iso }}', get isPast() { return this.date && this.date < this.today },
+  slot: {{ ((src.time_slot or '') if src and not ss else '')|tojson|forceescape }}, image: '{{ src.image_url|media if src and src.image_url else '' }}', link: '', pics: [],
+  useSlots: {{ 'false' if src and not ss else 'true' }}, s0: '{{ ss[0].starts_at if ss else '10:00' }}', s1: '{{ ss[-1].ends_at if ss else '17:00' }}',
+  mins: {{ ((ss[0].ends_at.split(':')[0]|int * 60 + ss[0].ends_at.split(':')[1]|int) - (ss[0].starts_at.split(':')[0]|int * 60 + ss[0].starts_at.split(':')[1]|int)) if ss else 30 }}, cap: {{ ss[0].capacity if ss else 6 }},
+  get count() { const [a, b] = [this.s0, this.s1].map(t => { const [h, m] = (t || '0:0').split(':'); return +h * 60 + +m }); return this.mins > 0 ? Math.max(0, Math.floor((b - a) / this.mins)) : 0 } }">
+  <form method="post" enctype="multipart/form-data" @pictures="pics = $event.detail; image = pics[0] || link" class="card border border-base-300/60 bg-base-100 lg:col-span-3">{{ ui.csrf() }}<div class="card-body gap-3">
+    <fieldset class="fieldset"><legend class="fieldset-legend">Title</legend><input name="title" x-model="title" required minlength="3" maxlength="120" class="input w-full" placeholder="e.g. Orchard Lifeline Drive"></fieldset>
+    <fieldset class="fieldset"><legend class="fieldset-legend">Venue</legend><input name="venue" x-model="venue" required minlength="3" maxlength="200" class="input w-full" placeholder="e.g. ION Orchard Atrium"></fieldset>
+    <fieldset class="fieldset"><legend class="fieldset-legend">Date</legend><input type="date" name="drive_date" x-model="date" required :class="isPast && 'input-warning'" class="input w-full"></fieldset>
+    <div class="rounded-box border border-base-300/60 p-4">
+      <label class="flex cursor-pointer items-center justify-between gap-3"><span><span class="flex items-center gap-2 font-semibold"><i data-lucide="clock" class="size-4 text-primary"></i>Time-slot booking</span>
+        <span class="text-sm opacity-60">Donors pick a time, so nobody queues.</span></span><input type="checkbox" name="use_slots" value="1" x-model="useSlots" class="toggle toggle-primary"></label>
+      <div x-show="useSlots" x-transition class="mt-3 grid gap-3 sm:grid-cols-4">
+        <fieldset class="fieldset"><legend class="fieldset-legend">Opens</legend><input type="time" name="slot_start" x-model="s0" class="input w-full"></fieldset>
+        <fieldset class="fieldset"><legend class="fieldset-legend">Closes</legend><input type="time" name="slot_end" x-model="s1" class="input w-full"></fieldset>
+        <fieldset class="fieldset"><legend class="fieldset-legend">Slot length</legend><select name="slot_minutes" x-model.number="mins" class="select w-full">
+          {% for m in [15, 20, 30, 45, 60] %}<option value="{{ m }}">{{ m }} min</option>{% endfor %}</select></fieldset>
+        <fieldset class="fieldset"><legend class="fieldset-legend">Donors per slot</legend><input name="slot_capacity" x-model.number="cap" {{ rules('count') }} class="input w-full"></fieldset>
+        <p class="text-sm sm:col-span-4"><span class="badge badge-soft badge-primary" x-text="count + ' slots'"></span> × <span x-text="cap"></span> donors = <b x-text="count * cap"></b> places</p>
+      </div>
+      <div x-show="!useSlots" class="mt-3 grid gap-3 sm:grid-cols-2">
+        <fieldset class="fieldset"><legend class="fieldset-legend">Time</legend><input name="time_slot" x-model="slot" class="input w-full" placeholder="10am – 5pm"></fieldset>
+        <fieldset class="fieldset"><legend class="fieldset-legend">Capacity</legend><input name="capacity" value="{{ src.capacity if src else 100 }}" {{ rules('count') }} class="input w-full"></fieldset>
+      </div>
+    </div>
+    <fieldset class="fieldset"><legend class="fieldset-legend">Pictures <span class="badge badge-ghost badge-xs">optional · up to {{ limit }}</span></legend>
+      {% with room = limit, first_is_cover = true %}{% include "partials/_image_picker.html" %}{% endwith %}
+      <details class="mt-1 text-sm"><summary class="cursor-pointer opacity-70">…or paste a picture link instead</summary>
+        <input name="image_url" x-model="link" @input="image = pics[0] || link" class="input input-sm mt-2 w-full" placeholder="https://…"></details></fieldset>
+    <fieldset class="fieldset"><legend class="fieldset-legend">Description</legend><textarea name="description" rows="4" class="textarea w-full" placeholder="What should donors know?">{{ src.description or '' if src else '' }}</textarea></fieldset>
+    {% if src and src.image_url %}<input type="hidden" name="copy_images_from" value="{{ src.id }}">{% endif %}
+    <label class="flex cursor-pointer items-start justify-between gap-3 rounded-box border border-base-300/60 p-4">
+      <span><span class="flex items-center gap-2 font-semibold"><i data-lucide="megaphone" class="size-4 text-primary"></i>Tell all donors about this drive</span>
+        <span class="text-sm opacity-60">Sends the “New drive announced” message by email / WhatsApp. Wording and channels: Messages → Automatic messages. Skipped for past dates.</span></span>
+      <input type="checkbox" name="announce" value="1" class="toggle toggle-primary" {{ 'checked' if announce_default }}></label>
+    {% set ns = namespace(ready=false) %}{% for c in social.values() %}{% if c.configured() %}{% set ns.ready = true %}{% endif %}{% endfor %}
+    {% if current_user.can('notify') %}<div class="rounded-box border border-base-300/60 p-4">
+      <div class="flex items-center gap-2 font-semibold"><i data-lucide="share-2" class="size-4 text-primary"></i>Publish on social media now</div>
+      <p class="mb-2 text-sm opacity-60">{{ 'Posts a poster and the drive details. You can also publish later from the drive page.' if ns.ready else "No social accounts are connected yet; you can download a ready-made poster from the drive page." }}</p>
+      <div class="flex flex-wrap gap-2">{% for key, ch in social.items() %}
+        <label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content {{ 'btn-disabled' if not ch.configured() }}">
+          <input type="checkbox" name="social" value="{{ key }}" class="hidden" {{ 'disabled' if not ch.configured() }}><i data-lucide="{{ ch.icon }}" class="size-4"></i>{{ ch.label }}</label>{% endfor %}</div>
+    </div>{% endif %}
+    <div class="rounded-box border border-base-300/60 p-4" x-data="{ on: true }">
+      <label class="flex cursor-pointer items-center justify-between gap-3"><span><span class="flex items-center gap-2 font-semibold"><i data-lucide="list-checks" class="size-4 text-primary"></i>Add the standard task checklist</span>
+        <span class="text-sm opacity-60">28 tasks from venue booking to the retro, with due dates from this drive's date. They appear in Planning.</span></span>
+        <input type="checkbox" name="add_checklist" value="1" x-model="on" class="toggle toggle-primary" checked></label>
+      <div x-show="on" class="mt-3" x-data="personPicker()">
+        <span class="text-sm font-semibold">Assign all checklist tasks to</span>
+        {% include "partials/_person_picker.html" %}
+        <input type="hidden" name="checklist_assignee" :value="pickedId">
+      </div>
+    </div>
+    <div role="alert" class="alert alert-warning alert-soft" x-show="isPast" x-cloak><i data-lucide="triangle-alert" class="size-5"></i>
+      <span>This date is in the past, so the drive <b>won't appear on the website</b>. That's fine for recording an old drive; it will be listed under Drives → Past.</span></div>
+    <div class="card-actions justify-end"><a href="{{ url_for('drives.index') }}" class="btn btn-ghost">Cancel</a><button class="btn" :class="isPast ? 'btn-warning' : 'btn-primary'"
+      @click="if (isPast && !confirm('This drive is in the past and will not show on the website. Save it anyway?')) $event.preventDefault()"><i data-lucide="rocket" class="size-4"></i>Publish drive</button></div>
+  </div></form>
+  <div class="lg:col-span-2"><div class="sticky top-24">
+    <p class="mb-2 text-sm font-semibold opacity-60">Live preview</p>
+    <article class="relative flex h-[24rem] flex-col justify-end overflow-hidden rounded-[2rem] text-white shadow-xl">
+      <div class="drive-img absolute inset-0" :style="image && `--img:url('${image}')`"></div>
+      <div class="absolute inset-0 bg-linear-to-t from-black/85 via-black/30 to-transparent"></div>
+      <div class="relative p-6"><span class="badge frost" x-text="date || 'Pick a date'"></span><span class="badge badge-warning ml-1" x-show="isPast" x-cloak>Past date</span>
+        <h3 class="mt-3 text-2xl font-extrabold" x-text="title || 'Your drive title'"></h3>
+        <p class="mt-1 text-sm opacity-90"><span x-text="venue || 'Venue'"></span> · <span x-text="useSlots ? s0 + ' – ' + s1 : (slot || 'All day')"></span></p>
+        <div class="mt-4 flex gap-2"><span class="btn btn-primary btn-sm" x-text="useSlots ? 'Book a time' : 'Register'"></span><span class="btn btn-sm frost">Interested</span></div></div>
+    </article>
+  </div></div>
+</div>
+{% endblock %}

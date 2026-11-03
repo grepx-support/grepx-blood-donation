@@ -1,0 +1,24 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Analytics access · {{ org }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Who sees which analytics', 'Toggle each widget per audience. Website visitors see theirs on the home page, donors on their dashboard.', 'sliders-horizontal') %}{% endcall %}
+<form method="post" class="card border border-base-300/60 bg-base-100">{{ ui.csrf() }}
+  <div class="overflow-x-auto"><table class="table">
+    <thead><tr><th>Widget</th>{% for k, label in audiences.items() %}<th class="text-center">{{ label }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for cls, allowed in rows %}<tr class="hover">
+      <td><div class="flex items-center gap-3"><span class="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><i data-lucide="{{ cls.icon }}" class="size-5"></i></span>
+        <div><div class="font-semibold">{{ cls.title }}</div><div class="text-xs capitalize opacity-60">{{ cls.kind }}</div></div></div></td>
+      {% for k in audiences %}<td class="text-center">
+        {% if k == 'admin' %}<input type="checkbox" class="toggle toggle-primary" checked disabled title="Admins always see everything">
+        {% else %}<input type="checkbox" class="toggle toggle-primary" name="{{ cls.key }}:{{ k }}" value="1" {{ 'checked' if k in allowed }}>{% endif %}</td>{% endfor %}
+    </tr>{% endfor %}</tbody></table></div>
+  <div class="card-body flex-row justify-end border-t border-base-300/60"><a href="{{ url_for('analytics.index') }}" class="btn btn-ghost">Preview analytics</a><button class="btn btn-primary"><i data-lucide="save" class="size-4"></i>Save access</button></div>
+</form>
+{% endblock %}

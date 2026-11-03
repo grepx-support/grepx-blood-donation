@@ -1,0 +1,70 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import vendor %}
+{% block title %}Report · {{ d.title }}{% endblock %}
+{% block vendor %}{{ vendor('apex') }}{% endblock %}
+{% block body %}
+{% set s = r.stats %}
+<a href="{{ url_for('reports.index') }}" class="btn btn-ghost btn-sm mb-4 print:hidden"><i data-lucide="arrow-left" class="size-4"></i>All reports</a>
+{% call ui.page_head(d.title ~ ' — report', d.drive_date|nice_date ~ ' · ' ~ d.venue ~ (' · last updated ' ~ r.updated_at if r.updated_at else ''), 'file-chart-column') %}
+  <form method="post" action="{{ url_for('reports.refresh', i=d.id) }}" class="print:hidden">{{ ui.csrf() }}<button class="btn btn-ghost border-base-300"><i data-lucide="refresh-cw" class="size-4"></i>Refresh numbers</button></form>
+  <a href="{{ url_for('reports.export', i=d.id) }}" class="btn btn-ghost border-base-300 print:hidden"><i data-lucide="file-spreadsheet" class="size-4"></i>Excel</a>
+  <button class="btn btn-primary print:hidden" onclick="print()"><i data-lucide="printer" class="size-4"></i>Print / PDF</button>
+{% endcall %}
+
+<div class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
+  {% for label, v, icon in [('Registered', s.registered, 'users'), ('Donated', s.donated, 'droplet'), ('Units', s.units, 'test-tube'), ('No-shows', s.no_show, 'user-x'),
+      ('Walk-ins', s.walk_ins, 'footprints'), ('First-timers', s.first_timers, 'sparkles'), ('Show rate', s.show_rate ~ '%', 'percent'), ('Capacity used', s.fill_rate ~ '%', 'gauge')] %}
+  <div class="rounded-box border border-base-300/60 bg-base-100 p-4"><i data-lucide="{{ icon }}" class="size-5 text-primary"></i><div class="mt-1 text-2xl font-extrabold">{{ v }}</div><div class="text-xs opacity-60">{{ label }}</div></div>
+  {% endfor %}
+</div>
+
+<div class="mt-5 grid gap-5 lg:grid-cols-3">
+  <div class="card border border-base-300/60 bg-base-100"><div class="card-body"><h3 class="card-title text-base">Outcome</h3>
+    <div x-data='apex({{ {"chart": {"type": "donut", "height": 260}, "series": [s.donated, s.confirmed, s.interested, s.no_show, s.not_eligible or 0], "labels": ["Donated", "Came / confirmed", "Only interested", "No-show", "Not eligible"], "legend": {"position": "bottom"}, "stroke": {"width": 0}}|tojson }})'></div></div></div>
+  <div class="card border border-base-300/60 bg-base-100"><div class="card-body"><h3 class="card-title text-base">Blood groups donated</h3>
+    <div x-data='apex({{ {"chart": {"type": "bar", "height": 260}, "series": [{"name": "Donors", "data": s.blood_groups.values()|list}], "xaxis": {"categories": s.blood_groups.keys()|list}, "plotOptions": {"bar": {"borderRadius": 6, "columnWidth": "50%"}}, "dataLabels": {"enabled": false}}|tojson }})'></div></div></div>
+  <div class="card border border-base-300/60 bg-base-100"><div class="card-body"><h3 class="card-title text-base">Time-slot usage</h3>
+    {% if s.slots %}<div x-data='apex({{ {"chart": {"type": "bar", "height": 260, "stacked": false}, "series": [{"name": "Booked", "data": s.slots|map(attribute="booked")|list}, {"name": "Capacity", "data": s.slots|map(attribute="capacity")|list}], "xaxis": {"categories": s.slots|map(attribute="time")|list}, "plotOptions": {"bar": {"borderRadius": 4}}, "dataLabels": {"enabled": false}}|tojson }})'></div>
+    {% else %}<p class="text-sm opacity-60">This drive didn't use time slots.</p>{% endif %}</div></div>
+</div>
+
+<div class="mt-5 grid gap-5 lg:grid-cols-3">
+  <form method="post" action="{{ url_for('reports.save', i=d.id) }}" class="card border border-base-300/60 bg-base-100 lg:col-span-2">{{ ui.csrf() }}<div class="card-body gap-4">
+    <h3 class="card-title"><i data-lucide="messages-square" class="size-5 text-primary"></i>Retrospective</h3>
+    <div class="grid gap-4 md:grid-cols-2">
+      <fieldset class="fieldset"><legend class="fieldset-legend text-success">✅ What went well</legend><textarea name="went_well" rows="5" class="textarea w-full" placeholder="One point per line">{{ r.went_well or '' }}</textarea></fieldset>
+      <fieldset class="fieldset"><legend class="fieldset-legend text-warning">🔧 What to improve</legend><textarea name="to_improve" rows="5" class="textarea w-full" placeholder="One point per line">{{ r.to_improve or '' }}</textarea></fieldset>
+    </div>
+    <fieldset class="fieldset"><legend class="fieldset-legend text-info">🎯 Action items for next time</legend><textarea name="actions" rows="4" class="textarea w-full" placeholder="One action per line — each can become a task">{{ r.actions or '' }}</textarea></fieldset>
+    <fieldset class="fieldset"><legend class="fieldset-legend">Notes</legend><textarea name="notes" rows="3" class="textarea w-full">{{ r.notes or '' }}</textarea></fieldset>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2"><span class="text-sm font-semibold">Overall</span>
+        <div class="rating">{% for n in range(1, 6) %}<input type="radio" name="rating" value="{{ n }}" class="mask mask-star-2 bg-amber-400" aria-label="{{ n }} star" {{ 'checked' if r.rating == n }}>{% endfor %}</div></div>
+      <button class="btn btn-primary print:hidden"><i data-lucide="save" class="size-4"></i>Save report</button></div>
+  </div></form>
+
+  <div class="space-y-5">
+    <div class="card border border-base-300/60 bg-base-100"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="list-checks" class="size-5 text-primary"></i>Turn actions into tasks</h3>
+      {% for a in (r.actions or '').splitlines() if a.strip() %}
+      <form method="post" action="{{ url_for('reports.to_task', i=d.id) }}" class="flex items-center gap-2 rounded-xl p-1.5 hover:bg-base-200/60">{{ ui.csrf() }}
+        <input type="hidden" name="title" value="{{ a.strip() }}"><span class="flex-1 text-sm">{{ a.strip() }}</span>
+        <button class="btn btn-ghost btn-xs print:hidden" title="Add to planner"><i data-lucide="plus" class="size-4"></i>Task</button></form>
+      {% else %}<p class="text-sm opacity-60">Write action items in the retro, save, and turn each into a planner task here.</p>{% endfor %}
+    </div></div>
+    <div class="card border border-base-300/60 bg-base-100"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="send" class="size-5 text-primary"></i>Messages & tasks</h3>
+      <ul class="space-y-1 text-sm">{% for ch, n in s.messages.items() %}<li class="flex justify-between"><span class="capitalize">{{ ch }}</span><b>{{ n }}</b></li>{% else %}<li class="opacity-60">No messages sent for this drive.</li>{% endfor %}</ul>
+      <div class="divider my-1"></div>
+      <ul class="space-y-1 text-sm">{% for st, n in s.tasks.items() %}<li class="flex justify-between"><span class="capitalize">{{ st|replace('_', ' ') }}</span><b>{{ n }}</b></li>{% else %}<li class="opacity-60">No tasks linked to this drive.</li>{% endfor %}</ul>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{# Small reusable building blocks. Import with: {% import "partials/_ui.html" as ui with context %} #}
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro brand(cls='') %}
+<a href="{{ url_for('public.index') }}" class="flex items-center gap-2.5 text-lg font-extrabold tracking-tight {{ cls }}">
+  <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-content shadow-lg shadow-primary/30"><i data-lucide="droplet" class="size-5 beat"></i></span>
+  <span class="truncate">{{ org }}</span>
+</a>{% endmacro %}
+
+{% macro theme_toggle() %}
+<label class="swap swap-rotate btn btn-ghost btn-circle" x-data="theme" title="Toggle dark mode">
+  <input type="checkbox" :checked="dark" @change="toggle()" aria-label="Dark mode">
+  <i data-lucide="sun" class="swap-on size-5"></i><i data-lucide="moon" class="swap-off size-5"></i>
+</label>{% endmacro %}
+
+{% macro palette_button() %}
+<button class="btn btn-ghost btn-sm hidden shrink-0 gap-2 border-base-300 sm:inline-flex" @click="$dispatch('open-palette')" title="Search (Ctrl K)" aria-label="Search">
+  <i data-lucide="search" class="size-4 opacity-60"></i><span class="hidden opacity-60 2xl:inline">Search</span><kbd class="kbd kbd-xs hidden 2xl:inline-flex">Ctrl K</kbd>
+</button>{% endmacro %}
+
+{# Person bubble: their photo when they have one (photo = media id), otherwise their initials. #}
+{% macro avatar(name, size='w-10', cls='bg-primary/10 text-primary', photo=None) %}
+{% if photo %}<div class="avatar"><div class="{{ size }} rounded-full bg-base-200"><img src="{{ photo|media }}" alt="{{ name }}" loading="lazy"></div></div>
+{% else %}<div class="avatar avatar-placeholder"><div class="{{ size }} rounded-full font-bold {{ cls }}"><span>{{ name|initials }}</span></div></div>{% endif %}{% endmacro %}
+
+{% macro status_badge(s) %}
+{% set c = {'interested': 'badge-info', 'confirmed': 'badge-warning', 'donated': 'badge-success', 'no_show': 'badge-ghost', 'not_eligible': 'badge-error',
+            'todo': 'badge-warning', 'in_progress': 'badge-info', 'blocked': 'badge-error', 'done': 'badge-success', 'sent': 'badge-success', 'logged': 'badge-ghost', 'failed': 'badge-error'} %}
+<span class="badge badge-soft {{ c.get(s, 'badge-ghost') }} capitalize">{{ s|replace('_', ' ') }}</span>{% endmacro %}
+
+{% macro blood(g, cls='') %}<span class="badge badge-primary font-bold {{ cls }}">{{ g or '?' }}</span>{% endmacro %}
+
+{% macro empty(icon, title, text) %}
+<div class="flex flex-col items-center gap-3 rounded-box border-2 border-dashed border-base-300 p-10 text-center">
+  <span class="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><i data-lucide="{{ icon }}" class="size-7"></i></span>
+  <h3 class="text-lg font-bold">{{ title }}</h3><p class="max-w-sm text-sm opacity-60">{{ text }}</p>{{ caller() if caller }}
+</div>{% endmacro %}
+
+{% macro page_head(title, sub='', icon='') %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4 rise">
+  <div><h1 class="flex items-center gap-3 text-2xl font-extrabold tracking-tight md:text-3xl">{% if icon %}<span class="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary"><i data-lucide="{{ icon }}" class="size-6"></i></span>{% endif %}{{ title }}</h1>
+  {% if sub %}<p class="mt-1 opacity-60">{{ sub }}</p>{% endif %}</div>
+  <div class="flex flex-wrap gap-2">{{ caller() if caller }}</div>
+</div>{% endmacro %}
+
+{% macro drive_actions(d, glass=False) %}
+{% if d.slot_count and current_user.is_authenticated %}
+<a class="btn btn-primary btn-sm" href="{{ url_for('public.drive', i=d.id) }}#book"><i data-lucide="clock" class="size-4"></i>Book a time</a>
+{% elif current_user.is_authenticated %}
+<form method="post" action="{{ url_for('public.confirm', i=d.id) }}">{{ csrf() }}<button class="btn btn-primary btn-sm"><i data-lucide="check" class="size-4"></i>Register</button></form>
+{% else %}<a class="btn btn-primary btn-sm" href="{{ url_for('auth.register', drive=d.id) }}"><i data-lucide="user-plus" class="size-4"></i>Register</a>{% endif %}
+<button type="button" class="btn btn-sm {{ 'frost' if glass else 'btn-ghost border-base-300' }}" @click="$dispatch('interest', {id: {{ d.id|tojson|forceescape }}, title: {{ d.title|tojson|forceescape }}})"><i data-lucide="hand-heart" class="size-4"></i>Interested</button>
+{% endmacro %}
+
+{% macro fill(d) %}{% set p = d.going|pct(d.capacity) %}
+<div class="flex items-center gap-2 text-xs"><progress class="progress {{ 'progress-error' if p > 85 else 'progress-primary' }} h-2 flex-1" value="{{ p }}" max="100"></progress>
+<span class="opacity-70 tabular-nums">{{ d.going }}/{{ d.capacity }}</span></div>{% endmacro %}
+
+{% macro widget(w) %}{% set d = w.data() %}
+<section class="card border border-base-300/60 bg-base-100 shadow-sm rise {{ {1: '', 2: 'lg:col-span-2', 3: 'lg:col-span-3'}[w.span] }}">
+  <div class="card-body">
+    <h3 class="card-title text-base"><i data-lucide="{{ w.icon }}" class="size-5 text-primary"></i>{{ w.title }}</h3>
+    {% if w.kind == 'chart' %}<div x-data='apex({{ d|tojson }})' class="-mx-2 min-h-[290px]"></div>
+    {% elif w.kind == 'stats' %}
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">{% for label, n, ic in d %}
+      <div class="rounded-2xl bg-base-200/70 p-4"><i data-lucide="{{ ic }}" class="size-5 text-primary"></i>
+        <div class="mt-2 text-3xl font-extrabold tabular-nums" x-data="countUp({{ n }})" x-text="v">{{ n }}</div><div class="text-sm opacity-60">{{ label }}</div></div>{% endfor %}</div>
+    {% elif w.kind == 'list' %}
+    <ol class="space-y-2">{% for name, n, unit in d %}<li class="flex items-center gap-3 rounded-xl p-2 hover:bg-base-200">
+      <span class="grid size-8 place-items-center rounded-full text-sm font-bold {{ 'bg-primary text-primary-content' if loop.first else 'bg-base-200' }}">{{ loop.index }}</span>
+      <span class="flex-1 font-semibold">{{ name }}</span><span class="text-sm opacity-60">{{ n }} {{ unit }}</span></li>
+    {% else %}<li class="text-sm opacity-60">Nothing here yet — be the first hero!</li>{% endfor %}</ol>
+    {% elif w.kind == 'flow' %}<div class="mermaid-wrap overflow-x-auto py-2"><pre class="mermaid bg-transparent">{{ d }}</pre></div>{% endif %}
+  </div>
+</section>{% endmacro %}
+
+{% macro calendar_sync(feed_url, label='Sync to Google Calendar') %}
+<div x-data="{ copied: false }">
+  <button type="button" class="btn btn-ghost btn-sm border-base-300" onclick="calsync.showModal()"><i data-lucide="calendar-sync" class="size-4"></i>{{ label }}</button>
+  <dialog id="calsync" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+    <div class="mb-4 flex items-center gap-3"><span class="grid size-12 place-items-center rounded-2xl bg-info/10 text-info"><i data-lucide="calendar-sync" class="size-6"></i></span>
+      <div><h3 class="text-lg font-bold">Sync with Google Calendar</h3><p class="text-sm opacity-60">Your tasks and bookings appear in your calendar and stay updated.</p></div></div>
+    <label class="input w-full"><i data-lucide="link" class="size-4 opacity-50"></i><input readonly value="{{ feed_url }}" class="grow text-xs" @focus="$el.select()">
+      <button type="button" class="btn btn-primary btn-xs" @click="ui.copy('{{ feed_url }}'); copied = true" x-text="copied ? 'Copied' : 'Copy'">Copy</button></label>
+    <ol class="mt-4 list-inside list-decimal space-y-1 text-sm opacity-80">
+      <li>Copy the private link above.</li>
+      <li>Open Google Calendar → <b>Other calendars +</b> → <b>From URL</b>.</li>
+      <li>Paste the link and press <b>Add calendar</b>. Google refreshes it every few hours.</li></ol>
+    <div role="alert" class="alert alert-soft alert-warning mt-4 text-xs"><i data-lucide="globe" class="size-4"></i><span>Google must be able to reach this website, so subscribing works once the site runs on a public address (set <code>SITE_URL</code>). Until then, use the “Add to Google Calendar” buttons.</span></div>
+    <div class="modal-action">
+      <a class="btn btn-ghost btn-sm" href="{{ feed_url|replace('https://', 'webcal://')|replace('http://', 'webcal://') }}">Apple / Outlook</a>
+      <a class="btn btn-info btn-sm" target="_blank" rel="noopener" href="https://calendar.google.com/calendar/r/settings/addbyurl">Open Google Calendar</a>
+      <form method="post" action="{{ url_for('calendar.reset') }}">{{ csrf() }}<button class="btn btn-ghost btn-sm text-error" title="Create a new private link">Reset link</button></form>
+      <button type="button" class="btn btn-sm" onclick="calsync.close()">Done</button></div>
+  </div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+</div>{% endmacro %}
+
+{% macro slot_badge(p) %}{% if p.slot_start %}<span class="badge badge-soft badge-info badge-sm gap-1"><i data-lucide="clock" class="size-3"></i>{{ p.slot_start }}</span>{% endif %}{% endmacro %}
+
+{# Auto-refresh: re-fetches this page every few seconds and swaps just this element (paused while dragging, typing or in a dialog). #}
+{% macro live(id, seconds=8) %}id="{{ id }}" data-live hx-disinherit="*" hx-get="{{ request.full_path }}" hx-trigger="every {{ seconds }}s" hx-select="#{{ id }}" hx-target="this" hx-swap="outerHTML"{% endmacro %}
+
+{% macro quick_register(action, title='Quick register', button='Register & check in') %}
+<form method="post" action="{{ action }}" class="space-y-3">{{ csrf() }}
+  <div class="grid gap-3 sm:grid-cols-2">
+    <label class="floating-label"><span>Full name *</span><input name="name" {{ rules('name') }} required class="input w-full" placeholder="Full name *"></label>
+    <label class="floating-label"><span>Phone / WhatsApp *</span><input name="phone" {{ rules('phone') }} required class="input w-full"></label>
+    <label class="floating-label sm:col-span-2"><span>Email (optional)</span><input name="email" {{ rules('email') }} class="input w-full" placeholder="Email (optional)"></label>
+  </div>
+  <div class="grid grid-cols-5 gap-1.5">{% for g in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}
+    <label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="radio" name="blood_group" value="{{ g }}" class="hidden">{{ g }}</label>{% endfor %}
+    <label class="btn btn-sm col-span-2 has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="radio" name="blood_group" value="" class="hidden" checked>Not sure</label></div>
+  <div class="join w-full">{% for x in ['Male', 'Female'] %}<label class="join-item btn btn-sm flex-1 has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="radio" name="sex" value="{{ x }}" class="hidden" {{ 'checked' if loop.first }}>{{ x }}</label>{% endfor %}</div>
+  <button class="btn btn-primary w-full"><i data-lucide="user-plus" class="size-4"></i>{{ button }}</button>
+</form>{% endmacro %}
+
+{# Share button + sheet. Usage: {{ ui.share(url, title, text, 'btn-ghost border-base-300', image=picture_url) }}
+   With an image, Instagram (and "Save picture") appear: Instagram has no web link, so the picture itself is shared. #}
+{% macro share(url, title, text, cls='btn-ghost border-base-300', label='Share', image='') %}
+<div x-data="shareSheet({{ url|tojson|forceescape }}, {{ title|tojson|forceescape }}, {{ text|tojson|forceescape }}, {{ image|tojson|forceescape }})" class="contents">
+  <button type="button" class="btn {{ cls }}" @click="$refs.sheet.showModal()"><i data-lucide="share-2" class="size-4"></i>{{ label }}</button>
+  <dialog x-ref="sheet" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+    <h3 class="text-lg font-bold">Share</h3><p class="mb-4 text-sm opacity-60" x-text="title"></p>
+    <div class="grid grid-cols-3 gap-2 sm:grid-cols-5">
+      {% set tile = 'flex flex-col items-center gap-1.5 rounded-2xl border border-base-300/60 p-3 text-xs font-semibold transition hover:-translate-y-0.5 hover:shadow-md' %}
+      {% macro tiles(items) %}{% for k, icon, label, tone in items %}
+      <a :href="link('{{ k }}')" target="_blank" rel="noopener" class="{{ tile }}"><i data-lucide="{{ icon }}" class="size-6 {{ tone }}"></i>{{ label }}</a>{% endfor %}{% endmacro %}
+      {{ tiles([('whatsapp', 'message-circle', 'WhatsApp', 'text-success'), ('facebook', 'thumbs-up', 'Facebook', 'text-info')]) }}
+      <button type="button" x-show="image" @click="instagram()" class="{{ tile }}"><i data-lucide="camera" class="size-6 text-accent"></i>Instagram</button>
+      {{ tiles([('linkedin', 'briefcase-business', 'LinkedIn', 'text-info'), ('x', 'at-sign', 'X', ''), ('threads', 'at-sign', 'Threads', ''),
+                ('telegram', 'send', 'Telegram', 'text-info'), ('reddit', 'message-square-text', 'Reddit', 'text-warning'), ('email', 'mail', 'Email', 'text-primary'),
+                ('sms', 'smartphone', 'SMS', 'text-secondary')]) }}
+      <button type="button" x-show="image" @click="download()" class="{{ tile }}"><i data-lucide="image-down" class="size-6"></i>Save picture</button>
+    </div>
+    <label class="input mt-4 w-full"><i data-lucide="link" class="size-4 opacity-50"></i><input readonly :value="url" class="grow text-sm" @focus="$el.select()">
+      <button type="button" class="btn btn-primary btn-xs" @click="copy()">Copy</button></label>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" x-show="native" @click="more()"><i data-lucide="share" class="size-4"></i>More apps</button>
+      <button type="button" class="btn" @click="$refs.sheet.close()">Close</button></div>
+  </div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+</div>{% endmacro %}

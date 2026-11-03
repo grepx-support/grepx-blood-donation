@@ -1,0 +1,91 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_access_form.html" import access_form with context %}
+{% block title %}Volunteers & admins · {{ org }}{% endblock %}
+
+{% block body %}
+{% call ui.page_head('Volunteers & admins', 'Add volunteers, give each one a role, and decide what every role can do. Donors are everyone else.', 'shield-check') %}
+  <button class="btn btn-primary" onclick="newperson.showModal()"><i data-lucide="user-plus" class="size-4"></i>Add volunteer</button>
+  <button class="btn btn-ghost border-base-300" onclick="newrole.showModal()"><i data-lucide="badge-plus" class="size-4"></i>New role</button>
+{% endcall %}
+<ol class="mb-6 grid gap-2 text-sm sm:grid-cols-3">
+  {% for n, icon, t in [(1, 'user-plus', 'Add a volunteer (or find an existing donor below)'), (2, 'badge', 'Pick their volunteer role'), (3, 'toggle-right', 'Fine-tune with extra functions if needed')] %}
+  <li class="flex items-center gap-3 rounded-2xl bg-base-200/60 p-3"><span class="grid size-8 shrink-0 place-items-center rounded-full bg-primary font-bold text-primary-content">{{ n }}</span><span>{{ t }}</span></li>{% endfor %}
+</ol>
+
+{# ---------- volunteer roles ---------- #}
+<section id="roles" class="mb-8 scroll-mt-24">
+  <div class="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 class="flex items-center gap-2 text-lg font-bold"><i data-lucide="badge" class="size-5 text-primary"></i>Volunteer roles</h2></div>
+  <p class="mb-4 text-sm opacity-70">A role is a named set of functions. Give a volunteer a role and they get all of its functions; change the role and everyone who has it changes too.</p>
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    {% for r in vroles %}
+    <form method="post" action="{{ url_for('staff.role_update', i=r.id) }}" class="card border border-base-300/60 bg-base-100">{{ ui.csrf() }}<div class="card-body gap-2 p-4">
+      <div class="flex items-center gap-2"><input name="name" value="{{ r.name }}" class="input input-sm input-ghost flex-1 px-1 text-base font-bold">
+        <span class="badge badge-secondary badge-sm whitespace-nowrap">{{ r.members }} volunteer{{ 's' if r.members != 1 }}</span></div>
+      <input name="description" value="{{ r.description or '' }}" class="input input-xs input-ghost w-full px-1 opacity-70" placeholder="What this role does">
+      <div class="space-y-1">{% for k, label in perms.items() %}
+        <label class="flex cursor-pointer items-center justify-between gap-2 text-sm"><span>{{ label }}</span><input type="checkbox" name="perm" value="{{ k }}" class="toggle toggle-primary toggle-xs" {{ 'checked' if k in r.perm_list }}></label>{% endfor %}</div>
+      <div class="mt-1 flex justify-between"><button class="btn btn-ghost btn-xs text-error" formaction="{{ url_for('staff.role_delete', i=r.id) }}" onclick="return confirm('Delete this role? Volunteers who have it keep only their extra functions.')">Delete</button>
+        <button class="btn btn-primary btn-xs">Save role</button></div>
+    </div></form>
+    {% else %}<div class="md:col-span-2 xl:col-span-4">{% call ui.empty('badge', 'No volunteer roles yet', 'Create roles like “Check-in desk” or “Drive coordinator”.') %}{% endcall %}</div>{% endfor %}
+  </div>
+</section>
+
+{# ---------- people ---------- #}
+{% set vols = users|selectattr('role', 'eq', 'volunteer')|list %}{% set adms = users|selectattr('role', 'eq', 'admin')|list %}{% set dons = users|selectattr('role', 'eq', 'donor')|list %}
+<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+  <h2 class="flex items-center gap-2 text-lg font-bold"><i data-lucide="users" class="size-5 text-primary"></i>{{ 'Search results' if q else 'Your team' }}
+    <span class="badge badge-secondary">{{ vols|length }} volunteer{{ 's' if vols|length != 1 }}</span><span class="badge badge-primary">{{ adms|length }} admin{{ 's' if adms|length != 1 }}</span></h2>
+  <form class="w-full max-w-lg"><label class="input w-full"><i data-lucide="search" class="size-4 opacity-50"></i><input name="q" value="{{ q }}" placeholder="Already a donor? Find them to make them a volunteer…" class="grow">
+    {% if q %}<a href="{{ url_for('staff.index') }}" class="btn btn-ghost btn-xs">Clear</a>{% endif %}</label></form>
+</div>
+{% macro group(title, people, icon) %}{% if people %}
+<h3 class="mb-2 mt-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wide opacity-60"><i data-lucide="{{ icon }}" class="size-4"></i>{{ title }} ({{ people|length }})</h3>
+<div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{% for u in people %}{{ person(u) }}{% endfor %}</div>{% endif %}{% endmacro %}
+{% macro person(u) %}
+  <form id="staff-{{ u.id }}" class="card border border-base-300/60 bg-base-100" hx-post="{{ url_for('staff.save', i=u.id, q=q) }}" hx-target="this" hx-select="#staff-{{ u.id }}" hx-swap="outerHTML">{{ ui.csrf() }}<div class="card-body gap-3">
+    <div class="flex items-center gap-3">{{ ui.avatar(u.name, 'w-12', 'bg-primary text-primary-content', u.photo_id) }}
+      <div class="min-w-0 flex-1"><div class="truncate font-bold">{{ u.name }}</div><div class="truncate text-sm opacity-60">{{ u.email }}</div></div>
+      <a href="{{ url_for('donors.profile', i=u.id) }}" class="btn btn-ghost btn-xs" title="Open profile"><i data-lucide="user-round" class="size-4"></i></a></div>
+    {{ access_form(u, '') }}
+    <button class="btn btn-primary btn-sm"><span class="htmx-indicator loading loading-spinner loading-xs"></span>Save access</button>
+  </div></form>{% endmacro %}
+{{ group('Volunteers', vols, 'hand-heart') }}{{ group('Admins', adms, 'shield') }}{{ group('Donors — switch “Account type” to Volunteer to promote', dons, 'droplet') }}
+{% if not users %}{% call ui.empty('user-search', 'No volunteers yet' if not q else 'Nobody found', 'Use “Add volunteer”, or search for an existing donor above.') %}{% endcall %}{% endif %}
+
+<dialog id="newperson" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-1 text-lg font-bold">Add a volunteer</h3>
+  <p class="mb-3 text-sm opacity-60">They log in with this email on the same login page as donors and see only what their role allows.</p>
+  <form method="post" action="{{ url_for('staff.create') }}" class="space-y-2" x-data="{ type: 'volunteer', vrole: '{{ vroles[0].id if vroles else '' }}' }">{{ ui.csrf() }}
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Full name</legend><input name="name" {{ rules('name') }} required class="input w-full"></fieldset>
+    <div class="grid gap-2 sm:grid-cols-2">
+      <fieldset class="fieldset py-0"><legend class="fieldset-legend">Email (login name)</legend><input name="email" {{ rules('email') }} required class="input w-full"></fieldset>
+      <fieldset class="fieldset py-0"><legend class="fieldset-legend">Phone / WhatsApp</legend><input name="phone" {{ rules('phone') }} class="input w-full"></fieldset></div>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Account type</legend><div class="join w-full">
+      {% for k, l in [('volunteer', 'Volunteer'), ('admin', 'Admin (full access)')] %}<label class="join-item btn btn-sm flex-1 has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content">
+        <input type="radio" name="role" value="{{ k }}" x-model="type" class="hidden">{{ l }}</label>{% endfor %}</div></fieldset>
+    <fieldset class="fieldset py-0" x-show="type === 'volunteer'"><legend class="fieldset-legend">Volunteer role</legend>
+      <select name="staff_role_id" x-model="vrole" class="select w-full"><option value="">No role (choose functions later)</option>
+        {% for r in vroles %}<option value="{{ r.id }}">{{ r.name }} ({{ r.perm_list|length }} function{{ 's' if r.perm_list|length != 1 }})</option>{% endfor %}</select></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Password <span class="badge badge-ghost badge-xs">optional</span></legend>
+      <input name="password" {{ rules('password') }} class="input w-full" placeholder="Leave empty to create a temporary one" autocomplete="new-password"></fieldset>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="newperson.close()">Cancel</button><button class="btn btn-primary"><i data-lucide="user-plus" class="size-4"></i>Add</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="newrole" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-3 text-lg font-bold">New volunteer role</h3>
+  <form method="post" action="{{ url_for('staff.role_create') }}" class="space-y-3">{{ ui.csrf() }}
+    <input name="name" required maxlength="80" class="input w-full" placeholder="Role name, e.g. Refreshments lead">
+    <input name="description" maxlength="255" class="input w-full" placeholder="What this role does (optional)">
+    <div class="space-y-1.5">{% for k, label in perms.items() %}
+      <label class="flex cursor-pointer items-center justify-between"><span class="text-sm">{{ label }}</span><input type="checkbox" name="perm" value="{{ k }}" class="toggle toggle-primary toggle-sm"></label>{% endfor %}</div>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="newrole.close()">Cancel</button><button class="btn btn-primary">Create role</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+{% endblock %}

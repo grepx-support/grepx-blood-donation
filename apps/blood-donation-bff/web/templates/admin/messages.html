@@ -1,0 +1,53 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import vendor %}
+{% block title %}Messages · {{ org }}{% endblock %}
+{% block vendor %}{{ vendor('datatable') }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Messages', 'Broadcast to any audience and see every email, SMS and WhatsApp that went out.', 'send') %}
+  {% if current_user.is_admin %}<a href="{{ url_for('automessages.index') }}" class="btn btn-primary"><i data-lucide="bot-message-square" class="size-4"></i>Automatic messages</a>{% endif %}
+{% endcall %}
+{% if link_warning and current_user.is_admin %}<div role="alert" class="alert alert-warning alert-soft mb-4 text-sm"><i data-lucide="link-2-off" class="size-5"></i>
+  <span><b>Links in messages:</b> {{ link_warning }} Now using <code>{{ site }}</code>.</span></div>{% endif %}
+<div class="mb-5 grid gap-3 sm:grid-cols-3">
+  {% for key, icon, label in [('email', 'mail', 'Email'), ('sms', 'smartphone', 'SMS'), ('whatsapp', 'message-circle', 'WhatsApp')] %}{% set ok, hint = setup[key] %}
+  <div class="flex items-center gap-3 rounded-box border p-3 {{ 'border-success/40 bg-success/5' if ok else 'border-warning/50 bg-warning/5' }}">
+    <span class="grid size-10 shrink-0 place-items-center rounded-xl {{ 'bg-success/15 text-success' if ok else 'bg-warning/15 text-warning' }}"><i data-lucide="{{ icon }}" class="size-5"></i></span>
+    <div class="min-w-0 flex-1"><div class="font-semibold">{{ label }} <span class="badge badge-xs {{ 'badge-success' if ok else 'badge-warning' }}">{{ 'connected' if ok else 'not set up' }}</span></div>
+      <div class="truncate text-xs opacity-60" title="{{ hint }}">{{ 'Messages are really sent.' if ok else 'Only written to the log. Set up in ' }}{% if not ok %}<a class="link" href="{{ url_for('integrations.index') }}">{{ hint }}</a>{% endif %}</div></div>
+    {% if current_user.is_admin %}<form method="post" action="{{ url_for('messages.test') }}">{{ ui.csrf() }}<input type="hidden" name="channel" value="{{ key }}">
+      <button class="btn btn-ghost btn-xs border-base-300" title="Send a test to yourself">Test</button></form>{% endif %}
+  </div>{% endfor %}
+</div>
+<div class="grid gap-5 lg:grid-cols-5">
+  {% if current_user.can('notify') %}
+  <form method="post" action="{{ url_for('messages.broadcast') }}" class="card border border-base-300/60 bg-base-100 lg:col-span-2" x-data="{ subject: '', message: '' }">{{ ui.csrf() }}<div class="card-body gap-3">
+    <h3 class="card-title"><i data-lucide="megaphone" class="size-5 text-primary"></i>Compose broadcast</h3>
+    <div><div class="mb-2 text-sm font-semibold">Audience</div><div class="flex flex-wrap gap-2">
+      {% for key, a in audiences.items() %}<label class="btn btn-xs has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="checkbox" name="audience" value="{{ key }}" class="hidden">{{ a.label }}</label>{% endfor %}</div></div>
+    <div><div class="mb-2 text-sm font-semibold">Channels</div><div class="flex flex-wrap gap-2">
+      {% for key, icon in [('email', 'mail'), ('sms', 'smartphone'), ('whatsapp', 'message-circle')] %}{% if key in channels %}
+      <label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="checkbox" name="channels" value="{{ key }}" class="hidden" {{ 'checked' if key != 'sms' }}><i data-lucide="{{ icon }}" class="size-4"></i>{{ key|capitalize }}</label>{% endif %}{% endfor %}</div></div>
+    <label class="floating-label"><span>Subject (email)</span><input name="subject" x-model="subject" required class="input w-full" placeholder="Subject (email)"></label>
+    <textarea name="message" x-model="message" required rows="5" class="textarea w-full" placeholder="Your message…"></textarea>
+    <div class="rounded-2xl bg-base-200/70 p-3 text-sm"><div class="mb-1 text-xs font-semibold opacity-60">WhatsApp / SMS preview</div>
+      <div class="chat chat-start"><div class="chat-bubble chat-bubble-success whitespace-pre-line text-sm" x-text="'{{ org }}: Hi Jane, ' + (message || '…')"></div></div></div>
+    <button class="btn btn-primary"><i data-lucide="send" class="size-4"></i>Send broadcast</button>
+  </div></form>
+  {% endif %}
+  <div class="card border border-base-300/60 bg-base-100 {{ 'lg:col-span-3' if current_user.can('notify') else 'lg:col-span-5' }}"><div class="card-body p-4" x-data="datatable">
+    <h3 class="card-title px-2"><i data-lucide="inbox" class="size-5 text-primary"></i>Delivery log</h3>
+    {% if rows %}<table class="table table-sm"><thead><tr><th>When</th><th>Type</th><th>Channel</th><th>To</th><th>Status</th></tr></thead><tbody>
+    {% for r in rows %}<tr><td class="whitespace-nowrap text-xs">{{ r.created }}</td><td><div class="text-sm font-medium">{{ (r.event or 'announcement')|replace('_', ' ')|capitalize }}</div><div class="max-w-56 truncate text-xs opacity-60">{{ r.subject or r.title or '' }}</div></td>
+      <td><span class="badge badge-ghost badge-sm gap-1"><i data-lucide="{{ {'email': 'mail', 'sms': 'smartphone', 'whatsapp': 'message-circle'}.get(r.channel, 'send') }}" class="size-3"></i>{{ r.channel }}</span></td>
+      <td class="text-xs">{{ r.recipient }}</td><td>{{ ui.status_badge(r.status) }}</td></tr>{% endfor %}
+    </tbody></table>{% else %}{% call ui.empty('inbox', 'Nothing sent yet', 'Messages you send will appear here.') %}{% endcall %}{% endif %}
+  </div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "auth/_split.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block side_title %}Choose a new<br>password.{% endblock %}
+{% block side_points %}<li class="flex items-center gap-3"><span class="grid size-9 place-items-center rounded-xl bg-white/15"><i data-lucide="key-round" class="size-5"></i></span>At least 8 characters — a short sentence is easy to remember</li>{% endblock %}
+{% block form %}
+<h1 class="text-3xl font-extrabold">New password</h1>
+{% if who %}<p class="mt-2 opacity-60">For {{ who.email }}</p>{% endif %}
+<form method="post" class="mt-8 space-y-4" x-data="{ show: false, a: '', b: '' }">{{ ui.csrf() }}
+  <label class="input w-full"><i data-lucide="lock" class="size-4 opacity-50"></i><input :type="show ? 'text' : 'password'" name="password" x-model="a" required {{ rules('password') }} placeholder="New password" autocomplete="new-password" class="grow" autofocus>
+    <button type="button" class="btn btn-ghost btn-xs" @click="show = !show" x-text="show ? 'Hide' : 'Show'">Show</button></label>
+  <label class="input w-full" :class="b && a !== b && 'input-error'"><i data-lucide="lock-keyhole" class="size-4 opacity-50"></i><input :type="show ? 'text' : 'password'" name="password2" x-model="b" required placeholder="Type it again" autocomplete="new-password" class="grow"></label>
+  <p class="text-sm text-error" x-show="b && a !== b" x-cloak>The two passwords don't match yet.</p>
+  <button class="btn btn-primary btn-block btn-lg" :disabled="!a || a !== b"><i data-lucide="check" class="size-5"></i>Save new password</button>
+</form>
+{% endblock %}

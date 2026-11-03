@@ -1,0 +1,296 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import vendor %}
+{% block title %}{{ d.title }} · {{ org }}{% endblock %}
+{% block vendor %}{{ vendor('sortable') }}{% endblock %}
+{% block body %}
+<div class="relative mb-6 overflow-hidden rounded-box text-white shadow-xl rise">
+  <div class="drive-img absolute inset-0" {% if d.image_url %}style="--img:url('{{ d.image_url|media }}')"{% endif %}></div>
+  <div class="absolute inset-0 bg-linear-to-r from-black/80 to-black/20"></div>
+  <div class="relative flex flex-wrap items-end justify-between gap-4 p-6 md:p-8">
+    <div><a href="{{ url_for('drives.index') }}" class="text-sm opacity-80 hover:opacity-100">← All drives</a>
+      <h1 class="mt-2 flex flex-wrap items-center gap-3 text-3xl font-extrabold">{{ d.title }}{% if d.status == 'completed' %}<span class="badge badge-success">Completed</span>{% endif %}</h1>
+      <p class="mt-1 opacity-90">{{ d.drive_date|nice_date }} · {{ d.time_slot or 'All day' }} · {{ d.venue }}</p></div>
+    <div class="flex flex-wrap gap-2">
+      {% if current_user.can('manage_drives') %}
+        {% if d.status == 'completed' %}<a href="#rewards" class="btn btn-sm btn-success"><i data-lucide="badge-check" class="size-4"></i>Completed · certificates</a>
+        {% elif d.drive_date <= today_iso %}<button type="button" onclick="dlgComplete.showModal()" class="btn btn-sm btn-success"><i data-lucide="flag" class="size-4"></i>Complete drive</button>{% endif %}
+      {% endif %}
+      {% if current_user.can('manage_drives') %}<button type="button" onclick="dlgClone.showModal()" class="btn btn-sm frost"><i data-lucide="copy-plus" class="size-4"></i>Clone</button>{% endif %}
+      <button type="button" onclick="dlgEditDrive.showModal()" class="btn btn-sm frost"><i data-lucide="pencil" class="size-4"></i>Edit details</button>
+      {% if current_user.can('notify') %}<a href="#social" class="btn btn-sm frost"><i data-lucide="share-2" class="size-4"></i>Social media</a>{% endif %}
+      <a href="#pictures" class="btn btn-sm frost"><i data-lucide="images" class="size-4"></i>Pictures ({{ images|length }}/{{ limit }})</a>
+      <a href="{{ url_for('public.drive', i=d.id) }}" target="_blank" class="btn btn-sm frost"><i data-lucide="external-link" class="size-4"></i>Public page</a>
+      {% if current_user.can('notify') %}<a href="{{ url_for('drives.invite', i=d.id) }}" class="btn btn-sm frost"><i data-lucide="mail-plus" class="size-4"></i>Invite donors</a>{% endif %}
+      {% if current_user.can('reports') %}<a href="{{ url_for('reports.view', i=d.id) }}" class="btn btn-sm frost"><i data-lucide="file-chart-column" class="size-4"></i>Report & retro</a>{% endif %}
+      {% if current_user.can('checkin') %}<a href="{{ url_for('checkin.index', drive=d.id) }}" class="btn btn-primary btn-sm"><i data-lucide="scan-line" class="size-4"></i>Check-in desk</a>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div {{ ui.live('board') }} x-data="kanban('{{ url_for('drives.move') }}')">
+  <div class="mb-4 flex flex-wrap items-center gap-2 text-sm"><i data-lucide="mouse-pointer-2" class="size-4 opacity-60"></i><span class="opacity-60">Drag people between columns. Each person is in exactly one column. Moving to <b>Donated</b> records the donation and sends a thank-you.
+    {% if not drive_day %}<b>Donated</b> and <b>No-show</b> unlock on the drive day ({{ d.drive_date|nice_date }}).{% endif %} Move someone to <b>Not eligible</b> (any day) when screening or the nurse defers them — it frees their time slot.</span></div>
+  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    {% for key, label in statuses.items() %}
+    <div class="flex flex-col rounded-box border border-base-300/60 bg-base-100 p-3">
+      <div class="mb-3 flex items-center justify-between px-1"><span class="flex items-center gap-1.5 font-bold">{% if key in day_only and not drive_day %}<i data-lucide="lock" class="size-3.5 opacity-50" title="Opens on the drive day"></i>{% endif %}{{ label }}</span><span class="badge badge-ghost" x-text="counts['{{ key }}'] ?? 0">{{ board[key]|length }}</span></div>
+      <div class="kanban-col min-h-48 flex-1 space-y-2 pb-6" data-col="{{ key }}" {{ 'data-locked' if key in day_only and not drive_day }}>
+        {%- for p in board[key] -%}
+        <div class="cursor-grab rounded-2xl border border-base-300/60 bg-base-200/40 p-3 transition-shadow hover:shadow-md active:cursor-grabbing" data-id="{{ p.id }}"
+             hx-get="{{ url_for('attendees.panel', i=d.id, iid=p.id) }}" hx-target="#attendee-body" hx-swap="innerHTML" hx-trigger="click"
+             hx-on::after-request="attendee.showModal()" title="Click for details · drag to change status">
+          <div class="flex items-center gap-3">{{ ui.avatar(p.name, 'w-9', photo=p.photo_id) }}
+            <div class="min-w-0 flex-1"><div class="truncate font-semibold">{{ p.name }}</div><div class="truncate text-xs opacity-60">{{ p.phone|phone }}</div></div>
+            <a href="{{ p.phone|wa }}" target="_blank" @click.stop class="btn btn-ghost btn-xs btn-circle text-success" title="WhatsApp"><i data-lucide="message-circle" class="size-4"></i></a></div>
+          <div class="mt-2 flex gap-1 empty:hidden">{{ ui.slot_badge(p) }}{% if not p.donor_id %}<span class="badge badge-ghost badge-sm">Guest</span>{% endif %}</div>
+        </div>
+        {%- endfor -%}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="pictures" class="card mb-6 scroll-mt-24 border border-base-300/60 bg-base-100"><div class="card-body gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="card-title"><i data-lucide="images" class="size-5 text-primary"></i>Pictures</h3>
+    <span class="text-sm opacity-60">{{ images|length }} of {{ limit }} · the cover is used on the website banner, cards and emails</span></div>
+  {% if images %}
+  <div class="grid gap-3 sm:grid-cols-3">
+    {% for url in images %}
+    <figure class="group relative aspect-video overflow-hidden rounded-2xl border border-base-300/60 bg-base-200">
+      <img src="{{ url|media }}" alt="Drive picture {{ loop.index }}" class="size-full object-cover" loading="lazy">
+      {% if loop.first %}<span class="badge badge-primary absolute left-2 top-2 gap-1"><i data-lucide="star" class="size-3"></i>Cover</span>{% endif %}
+      <div class="absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-linear-to-t from-black/70 to-transparent p-2">
+        {% if not loop.first %}<form method="post" action="{{ url_for('drives.images', i=d.id) }}">{{ ui.csrf() }}<input type="hidden" name="action" value="cover"><input type="hidden" name="url" value="{{ url }}">
+          <button class="btn btn-xs frost text-white"><i data-lucide="star" class="size-3"></i>Make cover</button></form>{% endif %}
+        <form method="post" action="{{ url_for('drives.images', i=d.id) }}" onsubmit="return confirm('Remove this picture?')">{{ ui.csrf() }}<input type="hidden" name="action" value="remove"><input type="hidden" name="url" value="{{ url }}">
+          <button class="btn btn-xs btn-error"><i data-lucide="trash-2" class="size-3"></i>Remove</button></form>
+      </div>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if images|length < limit %}
+  <form method="post" action="{{ url_for('drives.images', i=d.id) }}" enctype="multipart/form-data" class="space-y-3">{{ ui.csrf() }}
+    {% with room = limit - images|length, first_is_cover = not images %}{% include "partials/_image_picker.html" %}{% endwith %}
+    <div class="flex flex-wrap items-center gap-2"><input name="image_url" class="input input-sm min-w-60 flex-1" placeholder="…or paste a picture link (https://…)">
+      <button class="btn btn-primary btn-sm"><i data-lucide="upload" class="size-4"></i>Add pictures</button></div>
+  </form>
+  {% else %}<p class="text-sm opacity-60">That's the maximum of {{ limit }} pictures. Remove one to add another.</p>{% endif %}
+</div></div>
+
+<dialog id="attendee" class="modal modal-bottom sm:modal-middle"><div class="modal-box max-w-2xl" id="attendee-body"><span class="loading loading-spinner"></span></div>
+  <form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+{% set donors_n = board['donated']|length %}{% set open_n = board['interested']|length + board['confirmed']|length %}
+{% if d.status != 'completed' and d.drive_date <= today_iso and current_user.can('manage_drives') %}
+<dialog id="dlgComplete" class="modal modal-bottom sm:modal-middle"><div class="modal-box max-w-xl">
+  <h3 class="flex items-center gap-2 text-lg font-bold"><i data-lucide="flag" class="size-5 text-success"></i>Complete “{{ d.title }}”</h3>
+  <p class="mb-4 text-sm opacity-70">Closes the drive, gives every donor a certificate and, if you like, a thank-you voucher.</p>
+  <div class="mb-4 grid grid-cols-3 gap-2 text-center">
+    {% for v, l, tone in [(donors_n, 'donated', 'success'), (open_n, 'still open', 'warning'), (board['no_show']|length, 'no-show', 'error')] %}
+    <div class="rounded-2xl bg-{{ tone }}/10 p-3"><div class="text-2xl font-extrabold text-{{ tone }}">{{ v }}</div><div class="text-xs opacity-70">{{ l }}</div></div>{% endfor %}
+  </div>
+  <form method="post" action="{{ url_for('completion.complete', i=d.id) }}" class="space-y-3">{{ ui.csrf() }}
+    <label class="flex cursor-pointer items-start gap-3"><input type="checkbox" name="close_open" value="1" class="checkbox checkbox-sm mt-0.5" {{ 'checked' if open_n }}>
+      <span><b>Mark the {{ open_n }} people still Interested/Confirmed as No-show</b><span class="block text-xs opacity-60">So the report and their reminders are right.</span></span></label>
+    <label class="flex cursor-pointer items-start gap-3"><input type="checkbox" name="notify" value="1" class="checkbox checkbox-sm checkbox-success mt-0.5" checked>
+      <span><b>Send each donor their certificate</b> by email and WhatsApp<span class="block text-xs opacity-60">A personal certificate page they can download, print and share.</span></span></label>
+    <div class="rounded-2xl border border-base-300/60 p-3" x-data="{ on: false, mode: 'shared' }">
+      <label class="flex cursor-pointer items-center justify-between gap-3"><span class="flex items-center gap-2 font-semibold"><i data-lucide="gift" class="size-4 text-primary"></i>Add a thank-you voucher <span class="badge badge-ghost badge-xs">optional</span></span>
+        <input type="checkbox" name="voucher_on" value="1" x-model="on" class="toggle toggle-primary toggle-sm"></label>
+      <div x-show="on" x-transition class="mt-3 grid gap-2 sm:grid-cols-2">
+        <input name="voucher_title" :required="on" maxlength="120" class="input input-sm w-full sm:col-span-2" placeholder="What is it? e.g. Free kopi or 10% off">
+        <input name="voucher_partner" maxlength="120" class="input input-sm w-full" placeholder="Partner (e.g. Ya Kun, Guardian)">
+        <input name="voucher_expires" type="date" class="input input-sm w-full" title="Valid until">
+        <textarea name="voucher_details" rows="2" class="textarea textarea-sm w-full sm:col-span-2" placeholder="How to use it (shown to donors)"></textarea>
+        <div class="join sm:col-span-2"><label class="join-item btn btn-xs flex-1 has-checked:bg-primary has-checked:text-primary-content"><input type="radio" value="shared" x-model="mode" class="hidden">Same code for everyone</label>
+          <label class="join-item btn btn-xs flex-1 has-checked:bg-primary has-checked:text-primary-content"><input type="radio" value="unique" x-model="mode" class="hidden">A unique code per donor</label></div>
+        <input x-show="mode === 'shared'" name="voucher_shared" maxlength="120" class="input input-sm w-full font-mono sm:col-span-2" placeholder="Code, e.g. HERO2026 (leave empty if no code)">
+        <textarea x-show="mode === 'unique'" x-cloak name="voucher_codes" rows="3" class="textarea textarea-sm w-full font-mono sm:col-span-2" placeholder="One code per line (paste from the partner's spreadsheet)"></textarea>
+      </div>
+    </div>
+    {% if not donors_n %}<div role="alert" class="alert alert-warning alert-soft text-sm"><i data-lucide="triangle-alert" class="size-4"></i><span>Nobody is marked Donated yet, so no certificates will be issued. Mark donors on the board first.</span></div>{% endif %}
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="dlgComplete.close()">Cancel</button>
+      <button class="btn btn-success"><i data-lucide="flag" class="size-4"></i>Complete drive</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+{% endif %}
+
+{% if d.status == 'completed' and current_user.can('manage_drives') %}
+<div id="rewards" class="card mt-6 scroll-mt-24 border border-success/40 bg-base-100"><div class="card-body gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h3 class="card-title"><i data-lucide="award" class="size-5 text-success"></i>Certificates & rewards</h3>
+    <form method="post" action="{{ url_for('completion.reopen', i=d.id) }}" onsubmit="return confirm('Reopen this drive so attendance can be changed?')">{{ ui.csrf() }}
+      <button class="btn btn-ghost btn-sm border-base-300"><i data-lucide="rotate-ccw" class="size-4"></i>Reopen drive</button></form></div>
+  <p class="text-sm opacity-70">Completed {{ d.completed_at }} · {{ certificates|length }} certificate{{ 's' if certificates|length != 1 }} · {{ vouchers|length }} voucher{{ 's' if vouchers|length != 1 }}</p>
+  {% if certificates %}<div class="max-h-72 overflow-y-auto rounded-box border border-base-300/60"><table class="table table-sm">
+    <thead><tr><th>Donor</th><th>Certificate</th><th>Voucher</th><th>Sent</th></tr></thead><tbody>
+    {% for c in certificates %}{% set v = vouchers|selectattr('donor_id', 'eq', c.donor_id)|first %}
+    <tr><td class="font-semibold">{{ c.name }}</td><td><a class="link" target="_blank" href="{{ url_for('completion.view', code=c.id) }}">{{ c.id[:8]|upper }}</a></td>
+      <td class="font-mono text-xs">{{ (v.code or '✓') if v else '—' }}</td><td class="text-xs">{{ c.sent_at or 'not yet' }}</td></tr>{% endfor %}
+    </tbody></table></div>{% endif %}
+  <form method="post" action="{{ url_for('completion.rewards', i=d.id) }}" class="space-y-3">{{ ui.csrf() }}
+    <div class="rounded-2xl border border-base-300/60 p-3" x-data="{ on: false, mode: 'shared' }">
+      <label class="flex cursor-pointer items-center justify-between gap-3"><span class="flex items-center gap-2 font-semibold"><i data-lucide="gift" class="size-4 text-primary"></i>Add a thank-you voucher <span class="badge badge-ghost badge-xs">optional</span></span>
+        <input type="checkbox" name="voucher_on" value="1" x-model="on" class="toggle toggle-primary toggle-sm"></label>
+      <div x-show="on" x-transition class="mt-3 grid gap-2 sm:grid-cols-2">
+        <input name="voucher_title" :required="on" maxlength="120" class="input input-sm w-full sm:col-span-2" placeholder="What is it? e.g. Free kopi or 10% off">
+        <input name="voucher_partner" maxlength="120" class="input input-sm w-full" placeholder="Partner (e.g. Ya Kun, Guardian)">
+        <input name="voucher_expires" type="date" class="input input-sm w-full" title="Valid until">
+        <textarea name="voucher_details" rows="2" class="textarea textarea-sm w-full sm:col-span-2" placeholder="How to use it (shown to donors)"></textarea>
+        <div class="join sm:col-span-2"><label class="join-item btn btn-xs flex-1 has-checked:bg-primary has-checked:text-primary-content"><input type="radio" value="shared" x-model="mode" class="hidden">Same code for everyone</label>
+          <label class="join-item btn btn-xs flex-1 has-checked:bg-primary has-checked:text-primary-content"><input type="radio" value="unique" x-model="mode" class="hidden">A unique code per donor</label></div>
+        <input x-show="mode === 'shared'" name="voucher_shared" maxlength="120" class="input input-sm w-full font-mono sm:col-span-2" placeholder="Code, e.g. HERO2026 (leave empty if no code)">
+        <textarea x-show="mode === 'unique'" x-cloak name="voucher_codes" rows="3" class="textarea textarea-sm w-full font-mono sm:col-span-2" placeholder="One code per line (paste from the partner's spreadsheet)"></textarea>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <label class="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" name="resend_all" value="1" class="checkbox checkbox-xs">Send again to everyone (otherwise only new or not-yet-sent)</label>
+      <button class="btn btn-success btn-sm ml-auto"><i data-lucide="send" class="size-4"></i>Issue & send</button></div>
+  </form>
+</div></div>
+{% endif %}
+
+{% if current_user.can('manage_drives') %}
+<dialog id="dlgClone" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="flex items-center gap-2 text-lg font-bold"><i data-lucide="copy-plus" class="size-5 text-primary"></i>Clone this drive</h3>
+  <p class="mb-4 text-sm opacity-70">Same venue, description, pictures{{ ' and time slots' if slots }} — only the date changes. Sign-ups are not copied.</p>
+  <form method="post" action="{{ url_for('drives.clone', i=d.id) }}" class="space-y-3">{{ ui.csrf() }}
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">New date</legend><input type="date" name="drive_date" value="{{ clone_date }}" required class="input w-full"></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Title</legend><input name="title" value="{{ d.title }}" required class="input w-full"></fieldset>
+    {% if slots %}<label class="flex cursor-pointer items-center gap-3"><input type="checkbox" name="copy_slots" value="1" checked class="checkbox checkbox-sm">Copy the {{ slots|length }} time slots ({{ slots[0].starts_at }}–{{ slots[-1].ends_at }})</label>{% endif %}
+    <label class="flex cursor-pointer items-center gap-3"><input type="checkbox" name="add_checklist" value="1" checked class="checkbox checkbox-sm">Add the standard task checklist for the new date</label>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="dlgClone.close()">Cancel</button><button class="btn btn-primary"><i data-lucide="copy-plus" class="size-4"></i>Create copy</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+{% endif %}
+
+<dialog id="dlgEditDrive" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-3 text-lg font-bold">Edit drive details</h3>
+  <form method="post" action="{{ url_for('drives.edit', i=d.id) }}" class="space-y-2" x-data="{ date: '{{ d.drive_date }}' }">{{ ui.csrf() }}
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Title</legend><input name="title" value="{{ d.title }}" required minlength="3" maxlength="120" class="input w-full"></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Venue</legend><input name="venue" value="{{ d.venue }}" required minlength="3" maxlength="200" class="input w-full"></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Date</legend><input type="date" name="drive_date" x-model="date" required class="input w-full" :class="date < '{{ today_iso }}' && 'input-warning'">
+      <span class="text-xs text-warning" x-show="date < '{{ today_iso }}'" x-cloak>Past date: the drive will not show on the website.</span></fieldset>
+    {% if not d.slot_count %}<div class="grid grid-cols-2 gap-2">
+      <fieldset class="fieldset py-0"><legend class="fieldset-legend">Time</legend><input name="time_slot" value="{{ d.time_slot or '' }}" class="input w-full" placeholder="10am – 5pm"></fieldset>
+      <fieldset class="fieldset py-0"><legend class="fieldset-legend">Capacity</legend><input name="capacity" value="{{ d.capacity }}" {{ rules('count') }} class="input w-full"></fieldset></div>
+    {% else %}<p class="text-xs opacity-60">Times and capacity come from the time slots below.</p>{% endif %}
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Description</legend><textarea name="description" rows="4" class="textarea w-full">{{ d.description or '' }}</textarea></fieldset>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="dlgEditDrive.close()">Cancel</button><button class="btn btn-primary">Save</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<div {{ ui.live('slots-card', 15) }} class="card mt-6 border border-base-300/60 bg-base-100"><div class="card-body gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="card-title"><i data-lucide="clock" class="size-5 text-primary"></i>Time slots</h3>
+    {% if slots %}<span class="text-sm opacity-60">{{ slots|sum(attribute='booked') }} of {{ slots|sum(attribute='capacity') }} places booked</span>{% endif %}</div>
+  {% if slots %}
+  <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+    {% for s in slots %}{% set p = s.booked|pct(s.capacity) %}
+    <div class="rounded-2xl border border-base-300/60 p-2.5"><div class="flex justify-between text-sm"><b class="tabular-nums">{{ s.starts_at }}</b><span class="opacity-60">{{ s.booked }}/{{ s.capacity }}</span></div>
+      <progress class="progress {{ 'progress-error' if p >= 100 else 'progress-primary' }} mt-1.5 h-1.5" value="{{ p }}" max="100"></progress>
+      {% if current_user.can('manage_drives') %}<form method="post" action="{{ url_for('attendees.capacity', i=d.id, sid=s.id) }}" class="mt-1.5 flex items-center justify-between">{{ ui.csrf() }}
+        <button name="delta" value="-1" class="btn btn-ghost btn-xs btn-square border-base-300" title="One donor fewer" {{ 'disabled' if s.capacity <= [1, s.booked]|max }}>−</button>
+        <span class="text-[11px] opacity-60">places</span>
+        <button name="delta" value="1" class="btn btn-ghost btn-xs btn-square border-base-300" title="One donor more">+</button></form>{% endif %}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if slots and current_user.can('manage_drives') %}
+  <form method="post" action="{{ url_for('attendees.capacity_all', i=d.id) }}" class="flex flex-wrap items-end gap-3 rounded-2xl bg-base-200/60 p-3">{{ ui.csrf() }}
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Donors per slot (all slots)</legend><input name="value" value="{{ slots[0].capacity }}" {{ rules('count') }} max="500" class="input input-sm w-28"></fieldset>
+    <button class="btn btn-sm">Apply to every slot</button>
+    <span class="text-xs opacity-60">Use + / − on a slot to change just that one. A slot never goes below the people already booked.</span>
+  </form>{% endif %}
+  {% if not locked %}
+  <form method="post" action="{{ url_for('drives.slots', i=d.id) }}" class="flex flex-wrap items-end gap-3">{{ ui.csrf() }}
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Opens</legend><input type="time" name="slot_start" value="{{ slots[0].starts_at if slots else '10:00' }}" class="input input-sm"></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Closes</legend><input type="time" name="slot_end" value="{{ slots[-1].ends_at if slots else '17:00' }}" class="input input-sm"></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Minutes</legend><input type="number" name="slot_minutes" value="30" min="5" class="input input-sm w-24"></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Per slot</legend><input type="number" name="slot_capacity" value="{{ slots[0].capacity if slots else 6 }}" min="1" class="input input-sm w-24"></fieldset>
+    <button class="btn btn-primary btn-sm">{{ 'Rebuild slots' if slots else 'Create time slots' }}</button>
+  </form>
+  {% else %}<p class="text-sm opacity-60">Slots are locked because donors have already booked.</p>{% endif %}
+</div></div>
+
+<div {{ ui.live('drive-tasks', 15) }} class="card mt-6 scroll-mt-24 border border-base-300/60 bg-base-100"><div class="card-body gap-4">
+  {% set done = drive_tasks|selectattr('status', 'eq', 'done')|list|length %}
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h3 class="card-title"><i data-lucide="list-checks" class="size-5 text-primary"></i>Drive checklist</h3>
+    {% if drive_tasks %}<div class="flex items-center gap-3"><progress class="progress progress-success w-40" value="{{ done }}" max="{{ drive_tasks|length }}"></progress>
+      <span class="text-sm font-semibold">{{ done }}/{{ drive_tasks|length }} done</span>
+      <a class="btn btn-ghost btn-sm border-base-300" href="{{ url_for('tasks.index', drive=d.id, scope='all') }}"><i data-lucide="square-kanban" class="size-4"></i>Open in planner</a></div>{% endif %}
+  </div>
+  {% if task_phases %}
+  <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+    {% for phase, ts in task_phases %}{% set pd = ts|selectattr('status', 'eq', 'done')|list|length %}
+    <div class="rounded-2xl border border-base-300/60 p-3">
+      <div class="mb-2 flex items-center justify-between"><b class="text-sm">{{ phase }}</b><span class="text-xs opacity-60">{{ pd }}/{{ ts|length }}</span></div>
+      <progress class="progress progress-primary mb-2 h-1.5" value="{{ pd }}" max="{{ ts|length }}"></progress>
+      <ul class="space-y-1.5">{% for t in ts %}
+        <li class="flex items-start gap-2 text-xs">
+          <i data-lucide="{{ {'done': 'circle-check', 'in_progress': 'loader', 'blocked': 'octagon-alert'}.get(t.status, 'circle') }}" class="mt-0.5 size-3.5 shrink-0 {{ {'done': 'text-success', 'in_progress': 'text-info', 'blocked': 'text-error'}.get(t.status, 'opacity-40') }}"></i>
+          <span class="flex-1 {{ 'line-through opacity-50' if t.status == 'done' }} {{ 'text-error' if t.status != 'done' and t.due_at and t.due_at < now_iso }}">{{ t.title }}
+            <span class="block opacity-60">{{ t.assignee or 'Unassigned' }} · {{ (t.due_at or '')[5:16]|replace('T', ' ') }}</span></span></li>{% endfor %}</ul>
+    </div>{% endfor %}
+  </div>
+  {% else %}<p class="text-sm opacity-70">No tasks yet. Add the standard blood-drive checklist ({{ checklist_total }} tasks from planning to follow-up), with due dates worked out from the drive date.</p>{% endif %}
+  {% if checklist_missing %}
+  <form method="post" action="{{ url_for('drives.checklist', i=d.id) }}" class="flex flex-wrap items-end gap-3 rounded-2xl bg-base-200/60 p-3">{{ ui.csrf() }}
+    <div class="flex-1 text-sm"><b>{{ 'Add' if not drive_tasks else 'Add the missing' }} {{ checklist_missing }} checklist task{{ 's' if checklist_missing != 1 }}</b>
+      <span class="block opacity-60">Unassigned tasks can be picked up by volunteers, or assign them all to one person now.</span></div>
+    <div class="w-full max-w-sm" x-data="personPicker()"><span class="text-xs font-semibold">Assign all to</span>{% include "partials/_person_picker.html" %}
+      <input type="hidden" name="assignee_id" :value="pickedId"></div>
+    <button class="btn btn-primary btn-sm"><i data-lucide="list-plus" class="size-4"></i>Add checklist</button>
+  </form>{% endif %}
+</div></div>
+
+{% if current_user.can('notify') %}
+{% set ns = namespace(ready=false) %}{% for c in social.values() %}{% if c.configured() %}{% set ns.ready = true %}{% endif %}{% endfor %}
+<div id="social" class="card mt-6 scroll-mt-24 border border-base-300/60 bg-base-100" x-data="{ caption: {{ caption|tojson|forceescape }} }"><div class="card-body gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="card-title"><i data-lucide="share-2" class="size-5 text-primary"></i>Publish on social media</h3>
+    <span class="text-sm opacity-60">A square poster is made for you from the cover picture and drive details.</span></div>
+  <div class="grid gap-5 md:grid-cols-5">
+    <div class="md:col-span-2">
+      <img src="{{ url_for('social.poster', i=d.id) }}?v={{ images|length }}" alt="Poster for {{ d.title }}" class="aspect-square w-full rounded-2xl border border-base-300/60 object-cover" loading="lazy">
+      <div class="mt-2 flex gap-2"><a href="{{ url_for('social.poster', i=d.id) }}" download="{{ d.title }}.jpg" class="btn btn-ghost btn-sm flex-1 border-base-300"><i data-lucide="download" class="size-4"></i>Poster</a>
+        <button type="button" class="btn btn-ghost btn-sm flex-1 border-base-300" @click="ui.copy(caption + '\n\n{{ site }}{{ url_for('public.drive', i=d.id) }}', 'Caption copied!')"><i data-lucide="copy" class="size-4"></i>Caption</button></div>
+    </div>
+    <form method="post" action="{{ url_for('social.publish', i=d.id) }}" class="space-y-3 md:col-span-3">{{ ui.csrf() }}
+      <textarea name="caption" x-model="caption" rows="10" class="textarea w-full text-sm"></textarea>
+      <div class="flex flex-wrap gap-2">
+        {% for key, ch in social.items() %}
+        <label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content {{ 'btn-disabled' if not ch.configured() }}" title="{{ '' if ch.configured() else 'Not set up yet: ' ~ ch.setup_hint }}">
+          <input type="checkbox" name="network" value="{{ key }}" class="hidden" {{ 'checked' if ch.configured() else 'disabled' }}><i data-lucide="{{ ch.icon }}" class="size-4"></i>{{ ch.label }}</label>{% endfor %}
+        <button class="btn btn-primary btn-sm ml-auto" {{ 'disabled' if not ns.ready }} onclick="return confirm('Publish this drive now?')"><i data-lucide="send" class="size-4"></i>Publish now</button>
+      </div>
+      {% if not ns.ready %}<div role="alert" class="alert alert-soft alert-info text-sm"><i data-lucide="info" class="size-4"></i>
+        <span>No social accounts are connected yet{% if current_user.is_admin %} — <a class="link font-semibold" href="{{ url_for('integrations.index') }}">connect them in Integrations</a>{% else %} (ask an admin){% endif %}. Meanwhile, download the poster and copy the caption to post by hand.</span></div>{% endif %}
+      {% if social_posts %}<ul class="space-y-1.5 text-sm">{% for p in social_posts[:6] %}
+        <li class="flex items-start gap-2"><i data-lucide="{{ social[p.network].icon if p.network in social else 'share-2' }}" class="mt-0.5 size-4 shrink-0 {{ 'text-success' if p.status == 'posted' else 'text-error' }}"></i>
+          <span class="flex-1">{{ social[p.network].label if p.network in social else p.network }} · {{ (p.created|string)[:16] }}{{ ' · ' ~ p.by_name if p.by_name }}
+            {% if p.status == 'posted' %}{% if p.permalink %} · <a class="link" href="{{ p.permalink }}" target="_blank" rel="noopener">view post</a>{% endif %}
+            {% else %}<span class="block text-xs text-error">{{ p.error }}</span>{% endif %}</span></li>{% endfor %}</ul>{% endif %}
+    </form>
+  </div>
+</div></div>
+{% endif %}
+
+{% if current_user.can('notify') %}
+<form method="post" action="{{ url_for('drives.notify', i=d.id) }}" class="card mt-6 border border-base-300/60 bg-base-100">{{ ui.csrf() }}<div class="card-body gap-4">
+  <h3 class="card-title"><i data-lucide="megaphone" class="size-5 text-primary"></i>Announce this drive</h3>
+  <p class="text-sm opacity-60">Each person gets the template for their role and channel (e.g. volunteers get a “helpers needed” version).</p>
+  <div><div class="mb-2 text-sm font-semibold">Send to</div><div class="flex flex-wrap gap-2">
+    {% for key, a in audiences.items() %}<label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="checkbox" name="audience" value="{{ key }}" class="hidden" {{ 'checked' if key in ('donor', 'volunteer') }}>{{ a.label }}</label>{% endfor %}</div></div>
+  <div><div class="mb-2 text-sm font-semibold">Channels</div><div class="flex flex-wrap gap-2">
+    {% for key, icon in [('email', 'mail'), ('sms', 'smartphone'), ('whatsapp', 'message-circle')] %}{% if key in channels %}
+    <label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="checkbox" name="channels" value="{{ key }}" class="hidden" checked><i data-lucide="{{ icon }}" class="size-4"></i>{{ key|capitalize }}</label>{% endif %}{% endfor %}</div></div>
+  <div class="card-actions justify-end"><button class="btn btn-primary"><i data-lucide="send" class="size-4"></i>Send announcement</button></div>
+</div></form>
+{% endif %}
+{% endblock %}

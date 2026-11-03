@@ -1,0 +1,47 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Integrations · {{ org }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Integrations', 'Connect your social media pages, email and SMS/WhatsApp. Saved here, secrets encrypted; no server access needed.', 'plug') %}{% endcall %}
+{% for group, items in groups.items() %}
+<h2 class="mb-3 mt-8 flex items-center gap-2 text-lg font-bold first:mt-0"><i data-lucide="{{ 'share-2' if group == 'Social media' else 'send' }}" class="size-5 text-primary"></i>{{ group }}</h2>
+<div class="grid gap-5 lg:grid-cols-2">
+  {% for i in items %}{% set ok = i.configured() %}
+  <div id="{{ i.key }}" class="card scroll-mt-24 border bg-base-100 {{ 'border-success/50' if ok else 'border-base-300/60' }}" x-data="{ open: {{ 'false' if ok else 'true' }} }"><div class="card-body gap-3">
+    <div class="flex items-center gap-3">
+      <span class="grid size-11 place-items-center rounded-xl {{ 'bg-success/15 text-success' if ok else 'bg-base-200' }}"><i data-lucide="{{ i.icon }}" class="size-6"></i></span>
+      <div class="flex-1"><h3 class="font-bold">{{ i.label }}</h3>
+        <span class="badge badge-sm {{ 'badge-success' if ok else 'badge-ghost' }}">{{ 'Connected' if ok else 'Not set up' }}</span></div>
+      <button type="button" class="btn btn-ghost btn-sm" @click="open = !open" x-text="open ? 'Hide' : 'Edit'"></button>
+    </div>
+    <div x-show="open" x-collapse>
+      {% if i.steps %}<ol class="mb-3 list-inside list-decimal space-y-1 rounded-2xl bg-base-200/60 p-3 text-sm">{% for s in i.steps %}<li>{{ s }}</li>{% endfor %}
+        {% if i.docs %}<li class="list-none pt-1"><a class="link link-primary" href="{{ i.docs }}" target="_blank" rel="noopener">Open the developer site ↗</a></li>{% endif %}</ol>
+      {% elif i.docs %}<p class="mb-3 text-sm"><a class="link link-primary" href="{{ i.docs }}" target="_blank" rel="noopener">Where to find these ↗</a></p>{% endif %}
+      <form method="post" action="{{ url_for('integrations.save', key=i.key) }}" class="space-y-2">{{ ui.csrf() }}
+        {% for f in i.fields %}{% set from_env = f.key in env and f.key not in saved %}
+        <fieldset class="fieldset py-0"><legend class="fieldset-legend">{{ f.label }}{% if from_env %} <span class="badge badge-ghost badge-xs">from .env</span>{% endif %}</legend>
+          {% if f.secret %}
+          <input name="{{ f.key }}" type="password" autocomplete="new-password" class="input input-sm w-full"
+                 placeholder="{{ '•••••••• saved — leave empty to keep' if values.get(f.key) else 'Paste here' }}">
+          {% else %}
+          <input name="{{ f.key }}" value="{{ saved.get(f.key, '') if f.key in saved else '' }}" class="input input-sm w-full" placeholder="{{ (values.get(f.key) if from_env else f.placeholder) or '' }}">
+          {% endif %}
+          {% if f.help %}<span class="label whitespace-normal text-xs">{{ f.help }}</span>{% endif %}</fieldset>{% endfor %}
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <button class="btn btn-primary btn-sm"><i data-lucide="save" class="size-4"></i>Save</button>
+          <button class="btn btn-ghost btn-sm border-base-300" formaction="{{ url_for('integrations.test', key=i.key) }}" {{ 'disabled' if not ok }}><i data-lucide="plug-zap" class="size-4"></i>Test connection</button>
+          {% if i.fields|selectattr('key', 'in', saved)|list %}<button name="disconnect" value="1" class="btn btn-ghost btn-sm ml-auto text-error" onclick="return confirm('Remove the saved {{ i.label }} details?')">Disconnect</button>{% endif %}
+        </div>
+      </form>
+    </div>
+  </div></div>{% endfor %}
+</div>{% endfor %}
+<p class="mt-8 text-xs opacity-60">Secrets are encrypted with the server's SECRET_KEY. When you move to another server, keep the same SECRET_KEY in .env, or enter the secrets here again.</p>
+{% endblock %}

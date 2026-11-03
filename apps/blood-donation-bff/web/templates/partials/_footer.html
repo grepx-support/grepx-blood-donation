@@ -1,0 +1,20 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% import "partials/_ui.html" as ui with context %}
+<footer class="mt-20 border-t border-base-300/60 bg-base-100">
+  <div class="footer mx-auto max-w-7xl p-10 sm:footer-horizontal">
+    <aside class="max-w-xs">{{ ui.brand() }}<p class="mt-2 opacity-60">Connecting Singapore's donors with drives that save lives. One donation can help up to three people.</p></aside>
+    <nav><h6 class="footer-title">Donate</h6><a class="link link-hover" href="{{ url_for('public.index') }}#events">Upcoming drives</a>
+      <a class="link link-hover" href="{{ url_for('public.eligibility') }}">Eligibility check</a><a class="link link-hover" href="{{ url_for('auth.register') }}">Become a donor</a></nav>
+    <nav><h6 class="footer-title">Contact</h6><a class="link link-hover" href="https://wa.me/{{ wa_number }}" target="_blank" rel="noopener">WhatsApp us</a>
+      <a class="link link-hover" href="{{ url_for('auth.login') }}">Volunteer & staff login</a></nav>
+  </div>
+  <div class="border-t border-base-300/60 py-5 text-center text-sm opacity-70">
+    © {{ year }} <a class="link link-hover font-semibold" href="{{ company_url }}" target="_blank" rel="noopener">{{ company }}</a> ·
+    <a class="link link-hover" href="{{ company_url }}" target="_blank" rel="noopener">{{ company_url|replace('https://', '')|replace('http://', '')|trim('/') }}</a> · All rights reserved.
+    <span class="mt-1 block text-xs">Designed &amp; developed by <a class="link link-hover font-semibold" href="{{ company_url }}" target="_blank" rel="noopener">{{ company }}</a> · {{ org }} — made with ❤️ for every donor</span></div>
+</footer>

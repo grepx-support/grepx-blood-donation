@@ -1,0 +1,12 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+Subject: 💌 {{ r.first_name }}, you're invited: {{ drive.title }} on {{ drive.drive_date|nice_date }}
+<h2 style="margin:0 0 8px">Hi {{ r.first_name }}, we'd love to see you!</h2>
+<p>You've been personally invited to <b>{{ drive.title }}</b>.<br>📅 {{ drive.drive_date|nice_date }} · 🕒 {{ drive.time_slot or 'All day' }}<br>📍 {{ drive.venue }}</p>
+{% if note %}<p style="background:#fff1f2;border-radius:12px;padding:12px 16px">{{ note }}</p>{% endif %}
+<p>Pick a time that suits you — no queues.</p>
+<p><a href="{{ site }}/drive/{{ drive.id }}#book" style="display:inline-block;background:#e11d48;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700">Book my time</a></p>

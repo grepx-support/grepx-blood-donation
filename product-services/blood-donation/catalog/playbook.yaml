@@ -1,0 +1,132 @@
+template_key: blood-drive-playbook
+name: Blood drive standard checklist
+items:
+- phase: Planning
+  title: Confirm date, venue and capacity with the venue owner
+  days: -42
+  details: Get written confirmation of hall/room, opening hours, power points, Wi-Fi, parking and loading access.
+  important: true
+- phase: Planning
+  title: Book the blood bank collection team
+  days: -35
+  details: Agree number of beds, nurses/doctors, equipment and arrival time with the blood bank (e.g. HSA). Share expected donor numbers.
+  important: true
+- phase: Planning
+  title: Book tables, chairs, screens and a rest area
+  days: -28
+  details: Registration desk, waiting area, screening booths, donation area, rest & refreshment area.
+- phase: Planning
+  title: Set up the drive in the system with time slots
+  days: -28
+  details: Create the drive, set slot length and donors per slot to match the beds available. Add a banner image.
+- phase: Planning
+  title: Recruit volunteers and assign roles
+  days: -21
+  details: 'Roles: registration, queue marshal, refreshments, runner, aftercare, photographer. Give each volunteer a login with the right functions.'
+- phase: Promotion
+  title: Design poster and social media graphics
+  days: -21
+  details: Include date, venue, QR/link to the drive page and the eligibility chatbot.
+- phase: Promotion
+  title: Send personal invitations to eligible donors
+  days: -21
+  details: 'Drives -> Invite donors: filter ''eligible now'' and ''not registered for this drive''. Send by email and WhatsApp.'
+  important: true
+- phase: Promotion
+  title: Post on social media and partner channels
+  days: -14
+  details: Company channels, community groups, partner organisations. Ask donors to share their invite link.
+- phase: Promotion
+  title: Second invitation wave and urgent blood groups
+  days: -7
+  details: Re-invite people who have not booked; add a note for urgently needed groups (e.g. O-, B-, A-).
+- phase: Promotion
+  title: Check day-before reminders are going out
+  days: -2
+  details: 'Messages page: confirm drive reminders were sent; follow up by phone with unconfirmed VIP/first-time donors.'
+- phase: Logistics
+  title: Order refreshments for donors
+  days: -10
+  details: Drinks and snacks for the rest area (about 1.2 x expected donors). Confirm delivery time on the day.
+- phase: Logistics
+  title: Prepare signage, arrows and queue markers
+  days: -7
+  details: Entrance sign, directional arrows, 'Registration', 'Rest area', slot-time boards.
+- phase: Logistics
+  title: Print forms and the self check-in QR poster
+  days: -5
+  details: Consent/health questionnaires if required, plus the QR poster that opens the drive's self check-in page.
+- phase: Logistics
+  title: Arrange first-aid kit and emergency plan
+  days: -5
+  details: First-aider on site, nearest clinic/hospital, emergency contacts, fainting/aftercare procedure.
+  important: true
+- phase: Logistics
+  title: Volunteer briefing
+  days: -2
+  details: Walk through roles, donor flow, safety, and how to use the check-in desk (search, walk-in, QR scan).
+  time: '18:00'
+  important: true
+- phase: Logistics
+  title: Confirm final numbers with the collection team
+  days: -2
+  details: Share booked slots per hour and expected walk-ins so staffing matches demand.
+  important: true
+- phase: Logistics
+  title: Charge devices and test check-in
+  days: -1
+  details: Tablets/phones charged, check-in page opens, QR scanning tested, Wi-Fi/hotspot ready.
+  time: '17:00'
+- phase: Drive day
+  title: Venue set-up
+  days: 0
+  details: Registration desk, waiting area, screening, donation beds, rest area, signage and refreshments in place.
+  time: 08:00
+  important: true
+- phase: Drive day
+  title: Open check-in desk and self check-in
+  days: 0
+  details: Check in booked donors, register walk-ins, keep the board up to date.
+  time: 09:30
+- phase: Drive day
+  title: Manage queue and fit walk-ins into free slots
+  days: 0
+  details: Watch slot usage; move walk-ins into empty slots so nobody waits long.
+  time: '10:00'
+- phase: Drive day
+  title: Run refreshments and donor aftercare
+  days: 0
+  details: Every donor rests 10-15 minutes with a drink and snack; watch for dizziness.
+  time: '10:00'
+- phase: Drive day
+  title: Mid-day headcount and update the board
+  days: 0
+  details: Count donations so far, mark no-shows, adjust afternoon plan with the collection team.
+  time: '13:00'
+- phase: Drive day
+  title: Pack down and hand back the venue
+  days: 0
+  details: Clear tables, collect signage, rubbish out, venue checked with owner.
+  time: '18:00'
+- phase: Follow-up
+  title: Mark no-shows and confirm all donations are recorded
+  days: 1
+  details: Every booked donor should be Donated or No-show on the drive board.
+  important: true
+- phase: Follow-up
+  title: Thank donors and volunteers
+  days: 1
+  details: Thank-you messages go out automatically when a donation is recorded; send a separate thank-you to volunteers.
+- phase: Follow-up
+  title: Share results and photos
+  days: 3
+  details: Post totals (donations, lives touched) and photos with consent on social media.
+- phase: Follow-up
+  title: Write the drive report and retrospective
+  days: 3
+  details: 'Reports & retros: what went well, what to improve, action items, rating.'
+  important: true
+- phase: Follow-up
+  title: Turn retro actions into tasks for the next drive
+  days: 5
+  details: From the report, use 'Task' next to each action so improvements are planned.

@@ -1,0 +1,46 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{# Shared create/edit form. Alpine scope provides `t` (task) when editing. #}
+<form method="post" :action="t.id ? '/admin/tasks/' + t.id : '{{ url_for('tasks.create') }}'" class="space-y-3">{{ ui.csrf() }}
+  <label class="floating-label"><span>Title</span><input name="title" x-model="t.title" required class="input w-full" placeholder="What needs doing?"></label>
+  <textarea name="description" x-model="t.description" rows="3" class="textarea w-full" placeholder="Details (optional)"></textarea>
+  <div class="grid gap-3 sm:grid-cols-2">
+    <fieldset class="fieldset"><legend class="fieldset-legend">Due</legend><input type="datetime-local" name="due_at" x-model="t.due_at" class="input w-full"></fieldset>
+    {% if can_assign %}
+    <fieldset class="fieldset sm:col-span-2" x-data="personPicker(true)"><legend class="fieldset-legend">Assign to (anyone: admin, volunteer or donor)</legend>
+      {% include "partials/_person_picker.html" %}<input type="hidden" name="assignee_id" :value="t.assignee_id || 'none'"></fieldset>
+    {% else %}<input type="hidden" name="assignee_id" value="{{ current_user.id }}">{% endif %}
+    <fieldset class="fieldset"><legend class="fieldset-legend">Drive</legend><select name="drive_id" x-model="t.drive_id" class="select w-full"><option value="">General</option>
+      {% for d in drives %}<option value="{{ d.id }}">{{ d.title }}</option>{% endfor %}</select></fieldset>
+    <fieldset class="fieldset"><legend class="fieldset-legend">Phase</legend><select name="phase" x-model="t.phase" class="select w-full"><option value="">—</option>
+      {% for p in phases %}<option>{{ p }}</option>{% endfor %}</select></fieldset>
+    <fieldset class="fieldset" x-show="t.id"><legend class="fieldset-legend">Status</legend><select name="status" x-model="t.status" class="select w-full">
+      {% for k, l in statuses.items() %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select></fieldset>
+  </div>
+  <div class="grid gap-2 sm:grid-cols-2">
+    <label class="flex cursor-pointer items-center justify-between rounded-2xl bg-error/10 p-3"><span class="flex items-center gap-2 font-semibold text-error"><i data-lucide="flame" class="size-4"></i>Important</span>
+      <input type="checkbox" name="important" value="1" class="toggle toggle-error" x-model="t.important"></label>
+    <label class="flex cursor-pointer items-center justify-between rounded-2xl bg-info/10 p-3"><span class="flex items-center gap-2 font-semibold text-info"><i data-lucide="bell-ring" class="size-4"></i>Remind me</span>
+      <input type="checkbox" name="remind" value="1" class="toggle toggle-info" x-model="t.remind"></label>
+  </div>
+  <p class="text-xs opacity-60">Reminders go out by email & WhatsApp within 24h of the due time if the task isn't done — important tasks also by SMS.</p>
+  <details class="collapse collapse-arrow rounded-box border border-base-300/60" x-show="t.history && t.history.length">
+    <summary class="collapse-title text-sm font-semibold">History (<span x-text="(t.history || []).length"></span>)</summary>
+    <div class="collapse-content"><ul class="space-y-1.5 text-sm">
+      <template x-for="(h, i) in (t.history || [])" :key="i">
+        <li class="flex gap-2"><span class="w-32 shrink-0 font-mono text-xs opacity-60" x-text="h.at"></span>
+          <span><b x-text="h.who"></b> <span x-text="h.action"></span><span x-show="h.detail">: <span x-text="h.detail"></span></span></span></li>
+      </template></ul></div>
+  </details>
+  <div class="modal-action">
+    <button type="submit" x-show="t.id" form="delete-task" class="btn btn-ghost mr-auto text-error"><i data-lucide="trash-2" class="size-4"></i>Delete</button>
+    <a x-show="t.id && t.due_at" :href="gcal(t)" target="_blank" rel="noopener" class="btn btn-ghost"><i data-lucide="calendar-plus" class="size-4"></i>Google Calendar</a>
+    <button type="button" class="btn btn-ghost" @click="$refs.dlg.close()">Cancel</button>
+    <button class="btn btn-primary" x-text="t.id ? 'Save changes' : 'Create task'">Save</button>
+  </div>
+</form>
+<form id="delete-task" method="post" :action="'/admin/tasks/' + t.id + '/delete'">{{ ui.csrf() }}</form>

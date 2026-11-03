@@ -1,0 +1,25 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/public.html" %}
+{% block body %}
+<div class="mx-auto max-w-6xl px-4 py-10 md:py-16">
+  <div class="grid overflow-hidden rounded-[2rem] border border-base-300/60 bg-base-100 shadow-2xl lg:grid-cols-2 rise">
+    <div class="relative hidden overflow-hidden bg-linear-to-br from-rose-500 via-rose-700 to-rose-950 p-12 text-white lg:block">
+      <div class="bg-grid absolute inset-0 opacity-30"></div>
+      <div class="absolute -right-24 -top-24 size-80 rounded-full bg-amber-400/30 blur-3xl floaty"></div>
+      <div class="relative flex h-full flex-col">
+        <span class="grid size-14 place-items-center rounded-2xl bg-white/15"><i data-lucide="droplet" class="size-7 beat"></i></span>
+        <h2 class="mt-8 text-4xl font-extrabold leading-tight">{% block side_title %}{% endblock %}</h2>
+        <ul class="mt-8 space-y-4">{% block side_points %}{% endblock %}</ul>
+        <p class="mt-auto pt-10 text-sm opacity-80">“The blood you donate gives someone another chance at life.”</p>
+        <p class="mt-3 text-xs opacity-70">© {{ year }} {{ company }} · {{ company_url|replace('https://', '')|replace('http://', '')|trim('/') }} · Developed by {{ company }}</p>
+      </div>
+    </div>
+    <div class="p-8 md:p-12">{% block form %}{% endblock %}</div>
+  </div>
+</div>
+{% endblock %}

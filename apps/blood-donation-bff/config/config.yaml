@@ -1,0 +1,12 @@
+service_name: blood-donation-bff
+snapshot_table: bff_requests
+recovery_criteria: "to_service = 'blood-donation-bff' OR from_service = 'blood-donation-bff'"
+live_criteria: "to_service = 'blood-donation-bff' AND status = 'NEW'"
+bot_username: blood-bff
+tenant_id: lifeflow
+description: "HTTP edge for web + mobile: JSON API /api/v1 over the blood-donation and common services (BFF + API gateway)."
+product: blood-donation
+api_title: LifeFlow Blood Camp API
+project: blood-donation
+web:
+  bind: 0.0.0.0   # the site is public; every service's health/metrics port stays on 127.0.0.1

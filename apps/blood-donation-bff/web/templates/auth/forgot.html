@@ -1,0 +1,23 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "auth/_split.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block side_title %}Locked out?<br>No problem.{% endblock %}
+{% block side_points %}
+{% for i, t in [('mail', 'We email you a secure link'), ('timer', 'It works for 1 hour, once'), ('shield-check', 'Your old password stops working right away')] %}
+<li class="flex items-center gap-3"><span class="grid size-9 place-items-center rounded-xl bg-white/15"><i data-lucide="{{ i }}" class="size-5"></i></span>{{ t }}</li>{% endfor %}
+{% endblock %}
+{% block form %}
+<h1 class="text-3xl font-extrabold">Reset your password</h1>
+<p class="mt-2 opacity-60">Enter the email you log in with. We'll send you a link to choose a new password.</p>
+<form method="post" class="mt-8 space-y-4">{{ ui.csrf() }}
+  <label class="input w-full"><i data-lucide="mail" class="size-4 opacity-50"></i><input type="email" name="email" required placeholder="Email" autocomplete="email" class="grow" autofocus></label>
+  <button class="btn btn-primary btn-block btn-lg"><i data-lucide="send" class="size-5"></i>Send reset link</button>
+</form>
+<p class="mt-6 text-center text-sm opacity-70">No email on your account? Ask an organiser at the drive or on WhatsApp to reset it for you.</p>
+<a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-block mt-2">Back to log in</a>
+{% endblock %}

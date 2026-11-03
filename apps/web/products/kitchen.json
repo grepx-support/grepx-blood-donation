@@ -1,0 +1,7 @@
+{
+  "name": "Kitchen Stock Flow",
+  "logo": "🍳",
+  "tagline": "Every ingredient, every kitchen, one view.",
+  "theme": { "primary": "#0f766e", "primary-ink": "#ffffff" },
+  "modules": ["core/auth", "core/tasks", "core/messages", "core/admin"]
+}

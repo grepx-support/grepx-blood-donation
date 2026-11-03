@@ -1,0 +1,26 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{# Drop zone for drive pictures. Needs `room` (how many more pictures fit). Use inside a multipart form. #}
+<div x-data="imagePicker({{ room }})" class="space-y-3">
+  <input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple x-ref="file" class="hidden" @change="add([...$event.target.files])">
+  <div x-show="!full" role="button" tabindex="0" @click="pick()" @keydown.enter.prevent="pick()" @dragover.prevent="over = true" @dragleave="over = false" @drop.prevent="drop($event)"
+       :class="over ? 'border-primary bg-primary/10 scale-[1.01]' : 'border-base-300 hover:border-primary/60'"
+       class="flex cursor-pointer flex-col items-center gap-1 rounded-2xl border-2 border-dashed p-5 text-center transition">
+    <i data-lucide="image-plus" class="size-7 text-primary"></i>
+    <span class="font-semibold">Drop pictures here or tap to choose</span>
+    <span class="text-xs opacity-60">JPG, PNG, WebP or GIF · up to <span x-text="room"></span> · phone photos are resized automatically</span>
+  </div>
+  <div class="grid grid-cols-3 gap-2" x-show="items.length" x-cloak>
+    <template x-for="(it, i) in items" :key="it.url">
+      <div class="group relative aspect-video overflow-hidden rounded-xl border border-base-300/60">
+        <img :src="it.url" class="size-full object-cover" alt="">
+        <span x-show="i === 0 && {{ 'true' if first_is_cover else 'false' }}" class="badge badge-primary badge-xs absolute left-1.5 top-1.5">Cover</span>
+        <button type="button" @click="remove(i)" class="btn btn-circle btn-xs absolute right-1.5 top-1.5 bg-black/60 text-white border-0" title="Remove">✕</button>
+      </div>
+    </template>
+  </div>
+</div>

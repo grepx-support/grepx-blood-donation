@@ -1,0 +1,28 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% import "partials/_ui.html" as ui with context %}
+{% if q|length < 2 %}<p class="py-6 text-center text-sm opacity-60">Type at least 2 letters of a name, phone or email.</p>
+{% else %}
+<div class="divide-y divide-base-300/60">
+  {% for p in found %}
+  <div class="flex items-center gap-3 py-2.5">
+    {{ ui.avatar(p.name, 'w-10', photo=p.photo_id) }}
+    <div class="min-w-0 flex-1"><div class="truncate font-semibold">{{ p.name }} {{ ui.blood(p.blood_group, 'badge-sm') }}</div>
+      <div class="truncate text-xs opacity-60">{{ p.phone|phone }} · {{ p.email if '@no-email.local' not in p.email else 'no email' }} · {{ p.total }} donations</div></div>
+    {% if booked.get(p.id) in ('confirmed', 'donated') %}<span class="badge badge-soft badge-success">{{ booked[p.id]|capitalize }}</span>
+    {% else %}
+    <form hx-post="{{ url_for('checkin.walkin', drive_id=drive_id) }}" hx-target="#attendees" hx-select="#attendees" hx-swap="outerHTML"
+          hx-on::after-request="walkin.close()">{{ ui.csrf() }}<input type="hidden" name="donor_id" value="{{ p.id }}">
+      <button class="btn btn-primary btn-sm"><i data-lucide="log-in" class="size-4"></i>Check in</button></form>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="py-6 text-center"><p class="font-semibold">No donor found for “{{ q }}”</p><p class="text-sm opacity-60">Use “New donor” to register them in 10 seconds.</p></div>
+  {% endfor %}
+</div>
+<script>window.ui && ui.icons()</script>
+{% endif %}

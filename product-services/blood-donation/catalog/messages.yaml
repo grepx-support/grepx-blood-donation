@@ -1,0 +1,77 @@
+# Built-in message templates for the blood-donation product (seeded into template-service).
+# {placeholders} only — admins can override wording per template in Automatic messages.
+templates:
+  welcome:
+    label: Welcome after sign-up
+    placeholders: [first_name, name, org, link]
+    subject: "Welcome to {org}, {first_name} 🩸"
+    text: "Hi {first_name},\n\nWelcome to {org}! Your donor account is ready. Register for drives in one tap, track your impact and get a reminder when you can donate again.\n\nYour dashboard: {link}"
+  drive_announcement:
+    label: New drive announced
+    placeholders: [first_name, name, org, link, event_title, event_date, event_time, venue]
+    subject: "🩸 New blood drive: {event_title}"
+    text: "Hi {first_name},\n\nA new blood drive is coming up:\n{event_title}\n📅 {event_date}  🕒 {event_time}\n📍 {venue}\n\nBook your time (no queues): {link}"
+  drive_invitation:
+    label: Personal drive invitation
+    placeholders: [first_name, name, org, link, event_title, event_date, event_time, venue]
+    subject: "You're invited: {event_title} on {event_date}"
+    text: "Hi {first_name},\n\nWe'd love to see you at {event_title} on {event_date} ({event_time}) at {venue}. One donation can save up to 3 lives.\n\nPick a time: {link}"
+  drive_reminder:
+    label: Day-before reminder
+    placeholders: [first_name, name, org, link, event_title, event_date, event_time, venue, slot_time]
+    subject: "⏰ Tomorrow: {event_title}"
+    text: "Hi {first_name}, see you tomorrow at {event_title} ({event_time}, {venue}). Eat well and drink plenty of water. Can't come? Change or cancel: {link}"
+  slot_changed:
+    label: Booking moved to another time
+    placeholders: [first_name, name, org, link, event_title, event_date, event_time, venue, slot_time]
+    subject: "🕒 New time for {event_title}: {slot_time}"
+    text: "Hi {first_name}, your time for {event_title} on {event_date} is now {slot_time} ({venue}). Change or cancel: {link}"
+  donation_thanks:
+    label: Thank you after donating
+    placeholders: [first_name, name, org, link]
+    subject: "💚 Thank you, {first_name}"
+    text: "Thank you {first_name}! Your donation can save up to 3 lives. See your impact: {link}"
+  certificate:
+    label: Certificate after the drive
+    placeholders: [first_name, name, org, link, event_title, voucher]
+    subject: "🏅 Your certificate from {event_title}"
+    text: "Thank you {first_name}! Your donation at {event_title} can save up to 3 lives. Here is your certificate: {link}\n{voucher}"
+  eligible_again:
+    label: Eligible to donate again
+    placeholders: [first_name, name, org, link]
+    subject: "🩸 You can donate again, {first_name}"
+    text: "Hi {first_name}, you're eligible to donate again! Find a drive: {link}"
+  referral_joined:
+    label: A friend joined with your invite
+    placeholders: [first_name, name, org, link, friend]
+    subject: "🎉 {friend} joined with your invite"
+    text: "🎉 {friend} joined {org} with your invite! +1 point (and +2 when they donate). Leaderboard: {link}"
+  password_reset:
+    label: Password reset link
+    placeholders: [link, org]
+    channels: [email]
+    subject: "Reset your {org} password"
+    text: "Someone asked to reset your password. Use this link within 1 hour (it works once):\n\n{link}\n\nIf it wasn't you, ignore this email."
+  task_assigned:
+    label: Task assigned to you
+    placeholders: [first_name, title, due, context, link]
+    subject: "📋 New task: {title}"
+    text: "Hi {first_name}, you have a new task: {title} ({context}). Due {due}. {link}"
+  task_reminder:
+    label: Task due soon
+    placeholders: [first_name, title, due]
+    channels: [email, sms, whatsapp]
+    subject: "⏰ Task due {due}: {title}"
+    text: "Hi {first_name}, reminder: \"{title}\" is due {due}."
+  broadcast:
+    label: Staff broadcast
+    placeholders: [first_name, name, org, subject, text]
+    channels: [email, sms, whatsapp]
+    subject: "{subject}"
+    text: "{text}"
+  staff_message:
+    label: Message written on the website (sent exactly as written)
+    placeholders: [subject, text]
+    channels: [email, sms, whatsapp]
+    subject: "{subject}"
+    text: "{text}"

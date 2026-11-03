@@ -1,0 +1,57 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Automatic messages · {{ org }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Automatic messages', 'Messages the app sends by itself. Switch each one on or off, choose channels, and write your own wording if you like.', 'bot-message-square') %}
+  <a href="{{ url_for('messages.index') }}" class="btn btn-ghost border-base-300"><i data-lucide="send" class="size-4"></i>Broadcast & log</a>
+  <a href="{{ url_for('integrations.index') }}" class="btn btn-ghost border-base-300"><i data-lucide="plug" class="size-4"></i>Email / WhatsApp setup</a>
+{% endcall %}
+<div class="space-y-4">
+{% for row in rows %}{% set a = row.a %}
+<form id="{{ a.key }}" method="post" action="{{ url_for('automessages.save', key=a.key) }}" class="card scroll-mt-24 border bg-base-100 {{ 'border-success/40' if row.on else 'border-base-300/60 opacity-90' }}"
+      x-data="{ on: {{ 'true' if row.on else 'false' }}, wording: '{{ 'custom' if row.text else 'builtin' }}', open: false,
+                subject: {{ (row.subject or a.subject)|tojson|forceescape }}, text: {{ (row.text or a.text)|tojson|forceescape }}, sample: {{ sample|tojson|forceescape }},
+                fill(s) { return (s || '').replace(/\{(\w+)\}/g, (m, k) => k === 'org' ? {{ org|tojson|forceescape }} : (this.sample[k] ?? m)) },
+                put(p) { const el = this.$refs.text; const at = el.selectionStart ?? this.text.length; this.text = this.text.slice(0, at) + '{' + p + '}' + this.text.slice(at); this.$nextTick(() => el.focus()) } }">
+  {{ ui.csrf() }}<div class="card-body gap-3">
+  <div class="flex flex-wrap items-center gap-3">
+    <input type="checkbox" name="enabled" value="1" class="toggle toggle-success" x-model="on">
+    <div class="min-w-0 flex-1"><h3 class="font-bold">{{ a.label }}</h3><p class="text-sm opacity-60">{{ a.when }}</p></div>
+    <div class="flex flex-wrap gap-1.5" :class="!on && 'opacity-40 pointer-events-none'">
+      {% for key, icon in [('email', 'mail'), ('whatsapp', 'message-circle'), ('sms', 'smartphone')] %}{% if key in channels %}
+      <label class="btn btn-xs has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="checkbox" name="channels" value="{{ key }}" class="hidden" {{ 'checked' if key in row.channels }}><i data-lucide="{{ icon }}" class="size-3.5"></i>{{ {'email': 'Email', 'whatsapp': 'WhatsApp', 'sms': 'SMS'}[key] }}</label>{% endif %}{% endfor %}
+    </div>
+    <button type="button" class="btn btn-ghost btn-sm" @click="open = !open"><i data-lucide="pencil" class="size-4"></i><span x-text="open ? 'Close' : 'Wording'"></span></button>
+    <button class="btn btn-primary btn-sm">Save</button>
+  </div>
+  <div x-show="open" x-collapse class="grid gap-4 border-t border-base-300/60 pt-4 lg:grid-cols-2">
+    <div class="space-y-3">
+      <div class="join w-full">
+        <label class="join-item btn btn-sm flex-1 has-checked:bg-primary has-checked:text-primary-content"><input type="radio" name="wording" value="builtin" x-model="wording" class="hidden">Built-in design</label>
+        <label class="join-item btn btn-sm flex-1 has-checked:bg-primary has-checked:text-primary-content"><input type="radio" name="wording" value="custom" x-model="wording" class="hidden">My own text</label></div>
+      <p class="text-sm opacity-70" x-show="wording === 'builtin'">Uses our designed email (button, colours) and short WhatsApp text. Switch to “My own text” to write it yourself.</p>
+      <div x-show="wording === 'custom'" class="space-y-2">
+        <fieldset class="fieldset py-0"><legend class="fieldset-legend">Email subject</legend><input name="subject" x-model="subject" maxlength="200" class="input input-sm w-full"></fieldset>
+        <fieldset class="fieldset py-0"><legend class="fieldset-legend">Message (email, WhatsApp and SMS)</legend>
+          <textarea name="text" x-model="text" x-ref="text" rows="7" class="textarea w-full text-sm"></textarea></fieldset>
+        <div class="flex flex-wrap items-center gap-1"><span class="text-xs opacity-60">Insert:</span>
+          {% for p in a.placeholders %}<button type="button" class="badge badge-soft badge-primary badge-sm cursor-pointer font-mono" @click="put('{{ p }}')">{{ '{' ~ p ~ '}' }}</button>{% endfor %}</div>
+        <button type="button" class="link text-xs" @click="subject = {{ a.subject|tojson|forceescape }}; text = {{ a.text|tojson|forceescape }}">Reset to the suggested text</button>
+      </div>
+    </div>
+    <div x-show="wording === 'custom'" class="space-y-3">
+      <div class="text-xs font-semibold uppercase opacity-60">Preview (example donor)</div>
+      <div class="rounded-2xl border border-base-300/60 p-3 text-sm"><div class="mb-1 font-bold" x-text="fill(subject)"></div><div class="whitespace-pre-line opacity-80" x-text="fill(text)"></div></div>
+      <div class="chat chat-start"><div class="chat-bubble chat-bubble-success whitespace-pre-line text-sm" x-text="fill(text)"></div></div>
+    </div>
+  </div>
+</div></form>
+{% endfor %}
+</div>
+{% endblock %}

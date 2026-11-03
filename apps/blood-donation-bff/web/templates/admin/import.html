@@ -1,0 +1,35 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Bulk import · {{ org }}{% endblock %}
+{% block body %}
+<a href="{{ url_for('donors.index') }}" class="btn btn-ghost btn-sm mb-2"><i data-lucide="arrow-left" class="size-4"></i>Donors</a>
+{% call ui.page_head('Bulk import donors', 'Upload an Excel file, fix anything flagged, then import.', 'file-spreadsheet') %}{% endcall %}
+<ul class="steps steps-horizontal mb-8 w-full">
+  <li class="step step-primary">Download template</li><li class="step step-primary">Upload</li><li class="step">Review & fix</li><li class="step">Import</li>
+</ul>
+<div class="grid gap-5 lg:grid-cols-3">
+  <form method="post" action="{{ url_for('imports.upload') }}" enctype="multipart/form-data" class="lg:col-span-2" x-data="dropzone">{{ ui.csrf() }}
+    <input type="file" name="file" accept=".xlsx" x-ref="file" class="hidden" @change="submit()">
+    <div @click="pick()" @dragover.prevent="over = true" @dragleave.prevent="over = false" @drop.prevent="drop($event)"
+         :class="over ? 'border-primary bg-primary/10 scale-[1.01]' : 'border-base-300 bg-base-100'"
+         class="flex cursor-pointer flex-col items-center justify-center gap-4 rounded-[2rem] border-2 border-dashed p-14 text-center transition">
+      <span class="grid size-20 place-items-center rounded-3xl bg-primary/10 text-primary" :class="over && 'beat'"><i data-lucide="cloud-upload" class="size-10"></i></span>
+      <div x-show="!name"><div class="text-xl font-bold">Drag & drop your Excel file here</div><div class="opacity-60">or click to browse · .xlsx only</div></div>
+      <div x-show="name" x-cloak class="flex items-center gap-2 font-semibold"><span class="loading loading-spinner loading-sm text-primary"></span>Uploading <span x-text="name"></span>…</div>
+    </div>
+  </form>
+  <div class="card border border-base-300/60 bg-base-100"><div class="card-body">
+    <h3 class="card-title text-base"><i data-lucide="table-properties" class="size-5 text-primary"></i>Required headers</h3>
+    <p class="text-sm opacity-60">Row 1 must match exactly, in this order:</p>
+    <ol class="mt-2 space-y-1.5">{% for h in headers %}<li class="flex items-center gap-2"><span class="badge badge-ghost badge-sm w-6">{{ loop.index }}</span><code class="text-sm">{{ h }}</code></li>{% endfor %}</ol>
+    <a href="{{ url_for('imports.template') }}" class="btn btn-primary btn-soft mt-4"><i data-lucide="download" class="size-4"></i>Download template</a>
+    <p class="text-xs opacity-60">The template includes dropdowns for blood group and sex.</p>
+  </div></div>
+</div>
+{% endblock %}

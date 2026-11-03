@@ -1,0 +1,40 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Review import · {{ org }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Review & fix', 'Correct highlighted cells and press Save, or ignore a row. Only valid rows are imported.', 'clipboard-check') %}{% endcall %}
+<ul class="steps steps-horizontal mb-6 w-full"><li class="step step-primary">Download template</li><li class="step step-primary">Upload</li><li class="step step-primary">Review & fix</li><li class="step">Import</li></ul>
+<div id="review" x-data="{ f: '{{ 'error' if bad else 'all' }}' }">
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    {% for k, l, n, tone in [('all', 'All rows', rows|length, 'ghost'), ('error', 'Needs attention', bad, 'error'), ('valid', 'Ready', valid, 'success'), ('ignored', 'Ignored', ignored, 'ghost')] %}
+    <button class="btn btn-sm" :class="f === '{{ k }}' ? 'btn-neutral' : 'btn-ghost border-base-300'" @click="f = '{{ k }}'">{{ l }}<span class="badge badge-sm badge-{{ tone }}">{{ n }}</span></button>{% endfor %}
+  </div>
+  <div class="space-y-2">
+    {% for r in rows %}
+    <form x-show="f === 'all' || f === '{{ r.status }}'" method="post" action="{{ url_for('imports.fix', batch=batch, rid=r.id) }}"
+          hx-post="{{ url_for('imports.fix', batch=batch, rid=r.id) }}" hx-target="#review" hx-select="#review" hx-swap="outerHTML"
+          class="rounded-box border p-3 {{ 'border-error/40 bg-error/5' if r.status == 'error' else 'border-base-300/60 bg-base-100' }} {{ 'opacity-50' if r.status in ('ignored', 'imported', 'skipped') }}">{{ ui.csrf() }}
+      <div class="mb-2 flex items-center gap-2"><span class="badge badge-ghost badge-sm">Row {{ r.no }}</span>{{ ui.status_badge(r.status if r.status != 'error' else 'failed') }}</div>
+      <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-7">
+        {% for k in keys %}<label class="fieldset py-0"><span class="text-[11px] font-semibold uppercase opacity-60">{{ headers[k] }}</span>
+          {% if r.status == 'error' %}<input name="{{ k }}" value="{{ r.data[k] }}" {{ rules(k) if k in ('name', 'phone', 'email') }} class="input input-sm w-full {{ 'input-error' if r.errors[k] }}">{% if r.errors[k] %}<span class="text-xs text-error">{{ r.errors[k] }}</span>{% endif %}
+          {% else %}<input name="{{ k }}" value="{{ r.data[k] }}" readonly class="input input-sm input-ghost w-full">{% endif %}</label>{% endfor %}
+      </div>
+      {% if r.status == 'error' %}<div class="mt-3 flex justify-end gap-2">
+        <button class="btn btn-ghost btn-sm" formaction="{{ url_for('imports.ignore', batch=batch, rid=r.id) }}" hx-post="{{ url_for('imports.ignore', batch=batch, rid=r.id) }}" hx-target="#review" hx-select="#review" hx-swap="outerHTML"><i data-lucide="eye-off" class="size-4"></i>Ignore</button>
+        <button class="btn btn-primary btn-sm"><i data-lucide="check" class="size-4"></i>Save & re-check</button></div>{% endif %}
+    </form>
+    {% endfor %}
+  </div>
+  <div class="sticky bottom-4 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-box border border-base-300/60 bg-base-100/90 p-4 shadow-xl backdrop-blur">
+    <span><b class="text-success">{{ valid }}</b> ready · <b class="text-error">{{ bad }}</b> need attention · {{ ignored }} ignored</span>
+    <form method="post" action="{{ url_for('imports.commit', batch=batch) }}">{{ ui.csrf() }}<button class="btn btn-primary" {{ 'disabled' if not valid }}><i data-lucide="database" class="size-4"></i>Import {{ valid }} donor{{ 's' if valid != 1 }}</button></form>
+  </div>
+</div>
+{% endblock %}

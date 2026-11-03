@@ -1,0 +1,28 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/public.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_photo.html" import photo_editor with context %}
+{% block title %}My details · {{ org }}{% endblock %}
+{% block body %}
+{% set u = current_user %}
+<div class="mx-auto max-w-2xl px-4 py-10">
+  <a href="{{ url_for('donor.dashboard') }}" class="btn btn-ghost btn-sm mb-4"><i data-lucide="arrow-left" class="size-4"></i>Dashboard</a>
+  <div class="card mb-4 border border-base-300/60 bg-base-100 rise"><div class="card-body flex-row items-center gap-5">
+    {{ photo_editor(u, url_for('donor.photo'), url_for('donor.photo_remove')) }}
+    <div><h2 class="text-lg font-bold">Your photo</h2><p class="text-sm opacity-60">Shown on your donor card and to the organisers at check-in. JPG, PNG or WebP; we crop it to a circle.</p></div>
+  </div></div>
+  <form method="post" class="card border border-base-300/60 bg-base-100 shadow-xl rise" x-data="{ show: false }">{{ ui.csrf() }}<div class="card-body gap-4">
+    <h1 class="card-title text-2xl"><i data-lucide="user-pen" class="size-6 text-primary"></i>My details</h1>
+    {% include "partials/_donor_fields.html" %}
+    <fieldset class="fieldset"><legend class="fieldset-legend">New password <span class="badge badge-ghost badge-xs">leave empty to keep</span></legend>
+      <label class="input w-full"><input :type="show ? 'text' : 'password'" name="password" minlength="8" class="grow" placeholder="At least 8 characters" autocomplete="new-password">
+        <button type="button" class="btn btn-ghost btn-xs" @click="show = !show" x-text="show ? 'Hide' : 'Show'">Show</button></label></fieldset>
+    <button class="btn btn-primary"><i data-lucide="save" class="size-4"></i>Save my details</button>
+  </div></form>
+</div>
+{% endblock %}

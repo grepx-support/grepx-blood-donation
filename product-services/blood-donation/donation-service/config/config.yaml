@@ -1,0 +1,11 @@
+service_name: donation-service
+snapshot_table: donation_requests
+description: "Donation records, donor stats (next eligible date, badges), eligible-again reminders. Keywords: history, eligibility countdown"
+project: blood-donation
+owns: [donations, donor_stats]  # tables this service is the system of record for (kept in its own database)
+tables:            # created in this service's own database by setup.sh (table: [indexed fields])
+  donations: [donor_id, drive_id, donated_on]
+  donor_stats: [next_eligible]
+subscriptions:     # reactions to other services' tables (handler = module.function in src/)
+  - {table: bookings, handler: jobs.handle_booking, when: "status = 'ACCEPTED'", recover: "status = 'ACCEPTED' AND state = 'attended'"}
+  - {table: ticks, handler: jobs.handle_tick, when: "to_service = '{service}' AND status = 'NEW'"}

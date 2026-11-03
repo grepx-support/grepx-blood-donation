@@ -1,0 +1,178 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import vendor %}
+{% block title %}Planning · {{ org }}{% endblock %}
+{% block vendor %}{{ vendor('sortable', 'datatable', 'calendar') }}{% endblock %}
+{% block body %}
+{% set open = tasks|rejectattr('status', 'eq', 'done')|list %}
+<div x-data="{ view: localStorage.getItem('taskView') || 'board', t: {}, rm: {}, selecting: false, picked: [],
+              toggle(id) { this.picked = this.picked.includes(id) ? this.picked.filter(x => x !== id) : [...this.picked, id] },
+              pickAll() { this.picked = [...document.querySelectorAll(this.view === 'list' ? '[data-row-id]' : '#task-board [data-id]')].map(e => +(e.dataset.id || e.dataset.rowId)) },
+              open(task) { this.selecting ? this.toggle(task.id) : this.edit(task) }, blank: { id: null, title: '', description: '', due_at: '', assignee_id: '{{ current_user.id }}', drive_id: '{{ f_drive }}', status: 'todo', phase: '', important: false, remind: true, history: [] },
+              edit(task) { this.t = { ...task, due_at: task.due_at || '', drive_id: String(task.drive_id || ''), phase: task.phase || '', assignee_id: task.assignee_id ? String(task.assignee_id) : 'none', important: !!task.important, remind: !!task.remind }; this.$refs.dlg.showModal() },
+              create() { this.t = { ...this.blank }; this.$refs.dlg.showModal() },
+              gcal(t) { if (!t.due_at) return ''; const s = t.due_at.replace(/[-:]/g, '') + '00', d = new Date(t.due_at); d.setMinutes(d.getMinutes() + 30);
+                const p = (n) => String(n).padStart(2, '0'), e = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`;
+                return 'https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=Asia/Singapore&text=' + encodeURIComponent(t.title) + '&dates=' + s + '/' + e + '&details=' + encodeURIComponent(t.description || '') } }"
+     x-init="$watch('view', v => { try { localStorage.setItem('taskView', v) } catch (e) {} }); $watch('selecting', s => document.body.classList.toggle('selecting', s))">
+{% call ui.page_head('Planning', 'Every task has an owner, a status and a due date. Drag cards to update status; open a card to see its history.', 'square-kanban') %}
+  {{ ui.calendar_sync(feed_url, 'Google Calendar') }}
+  <button class="btn btn-primary" @click="create()"><i data-lucide="plus" class="size-4"></i>New task</button>
+{% endcall %}
+
+{# ---------- how it works + drive checklists ---------- #}
+<div class="mb-6 grid gap-4 xl:grid-cols-5">
+  <div class="card border border-base-300/60 bg-base-100 xl:col-span-2"><div class="card-body gap-3 p-5">
+    <h3 class="card-title text-base"><i data-lucide="workflow" class="size-5 text-primary"></i>How planning works</h3>
+    <ol class="space-y-2.5 text-sm">
+      <li class="flex gap-3"><span class="badge badge-primary badge-sm mt-0.5 w-6">1</span><span><b>Create a drive</b>, and the 28-task checklist is added with due dates counted back from the drive date.</span></li>
+      <li class="flex gap-3"><span class="badge badge-primary badge-sm mt-0.5 w-6">2</span><span><b>Assign</b> each task to anyone (admin, volunteer or donor), or leave it <span class="badge badge-warning badge-xs">Unassigned</span> so a volunteer can <b>Pick up</b> it.</span></li>
+      <li class="flex gap-3"><span class="badge badge-primary badge-sm mt-0.5 w-6">3</span><span>Move cards <span class="badge badge-soft badge-warning badge-xs">To do</span> → <span class="badge badge-soft badge-info badge-xs">In progress</span> → <span class="badge badge-soft badge-success badge-xs">Done</span>. Stuck? Use <span class="badge badge-soft badge-error badge-xs">Blocked</span> and say why in the details.</span></li>
+      <li class="flex gap-3"><span class="badge badge-primary badge-sm mt-0.5 w-6">4</span><span>Owners get <b>reminders</b> (email & WhatsApp, important ones also by SMS) within 24 h of the due time until the task is done.</span></li>
+      <li class="flex gap-3"><span class="badge badge-primary badge-sm mt-0.5 w-6">5</span><span>Every change is kept in the task's <b>history</b>; after the drive, write the <b>report & retro</b> and turn its actions into tasks for next time.</span></li>
+    </ol>
+  </div></div>
+
+  <div class="card border border-base-300/60 bg-base-100 xl:col-span-3"><div class="card-body gap-3 p-5">
+    <h3 class="card-title text-base"><i data-lucide="list-checks" class="size-5 text-primary"></i>Drive checklists</h3>
+    {% if drive_checklists %}
+    <div class="space-y-2">
+      {% for d, have, total, done, todo in drive_checklists %}
+      <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-base-300/60 p-3">
+        <div class="flex flex-col items-center rounded-xl bg-primary/10 px-2.5 py-1 text-primary"><b class="leading-none">{{ d.drive_date|day }}</b><span class="text-[10px] font-bold uppercase">{{ d.drive_date|month }}</span></div>
+        <div class="min-w-0 flex-1"><div class="truncate font-semibold">{{ d.title }}</div>
+          {% if have %}<div class="flex items-center gap-2 text-xs"><progress class="progress progress-success h-1.5 w-32" value="{{ done }}" max="{{ have }}"></progress>{{ done }}/{{ have }} done</div>
+          {% else %}<div class="text-xs text-warning">No checklist yet</div>{% endif %}</div>
+        {% if have %}<a class="btn btn-ghost btn-sm border-base-300" href="{{ url_for('tasks.index', drive=d.id, scope='all') }}">View tasks</a>
+        {% if current_user.can('manage_tasks') or current_user.can('manage_drives') %}
+        <button type="button" class="btn btn-ghost btn-sm btn-square text-error" title="Remove this drive's checklist"
+                @click="rm = { id: {{ d.id|tojson|forceescape }}, title: {{ d.title|tojson|forceescape }}, have: {{ have }}, todo: {{ todo }} }; $refs.rmdlg.showModal()"><i data-lucide="trash-2" class="size-4"></i></button>{% endif %}{% endif %}
+        {% if have < total and current_user.can('manage_drives') %}
+        <form method="post" action="{{ url_for('drives.checklist', i=d.id) }}">{{ ui.csrf() }}<input type="hidden" name="next" value="{{ url_for('tasks.index', drive=d.id, scope='all') }}">
+          <button class="btn btn-primary btn-sm"><i data-lucide="list-plus" class="size-4"></i>{{ 'Add checklist' if not have else 'Add ' ~ (total - have) ~ ' missing' }}</button></form>{% endif %}
+      </div>{% endfor %}
+    </div>
+    {% else %}
+    <div role="alert" class="alert alert-soft alert-info"><i data-lucide="calendar-plus" class="size-5"></i>
+      <span>No upcoming drives yet. Create one and its checklist appears here automatically.</span>
+      {% if current_user.can('manage_drives') %}<a href="{{ url_for('drives.new') }}" class="btn btn-sm btn-info">New drive</a>{% endif %}</div>
+    {% endif %}
+    <details class="collapse collapse-arrow rounded-box border border-base-300/60" {{ 'open' if not drive_checklists }}>
+      <summary class="collapse-title text-sm font-semibold">What's in the checklist ({{ playbook|length }} tasks)</summary>
+      <div class="collapse-content"><div class="grid gap-3 md:grid-cols-2">
+        {% for phase in phases %}<div><div class="mb-1 text-xs font-bold uppercase tracking-wider text-primary">{{ phase }}</div>
+          <ul class="space-y-1 text-sm">{% for it in playbook if it.phase == phase %}
+            <li class="flex gap-2"><span class="w-16 shrink-0 text-xs opacity-60">{{ ('day ' ~ ('+' if it.days > 0 else '') ~ it.days) if it.days else 'drive day' }}</span>
+              <span>{{ it.title }}{% if it.important %} <i data-lucide="flame" class="inline size-3.5 text-error"></i>{% endif %}</span></li>{% endfor %}</ul></div>{% endfor %}
+      </div></div>
+    </details>
+  </div></div>
+</div>
+
+<form class="mb-5 flex flex-wrap items-end gap-3" onchange="this.submit()">
+  {% if current_user.is_admin %}<input type="hidden" name="scope" value="{{ 'all' if everyone else '' }}">
+  <div class="join"><a href="{{ url_for('tasks.index', drive=f_drive, who=f_who) }}" class="join-item btn btn-sm {{ 'btn-active' if not everyone }}">My view</a>
+    <a href="{{ url_for('tasks.index', scope='all', drive=f_drive, who=f_who) }}" class="join-item btn btn-sm {{ 'btn-active' if everyone }}">Everyone's tasks</a></div>{% endif %}
+  <fieldset class="fieldset py-0"><legend class="fieldset-legend">Drive</legend><select name="drive" class="select select-sm w-56"><option value="">All drives & general</option>
+    {% for d in all_drives %}<option value="{{ d.id }}" {{ 'selected' if f_drive == d.id|string }}>{{ d.title }} · {{ d.drive_date }}</option>{% endfor %}</select></fieldset>
+  <fieldset class="fieldset py-0"><legend class="fieldset-legend">Owner</legend><select name="who" class="select select-sm w-48"><option value="">Anyone</option>
+    <option value="unassigned" {{ 'selected' if f_who == 'unassigned' }}>Unassigned</option><option value="{{ current_user.id }}" {{ 'selected' if f_who == current_user.id|string }}>Me</option>
+    {% for s in staff if s.id != current_user.id %}<option value="{{ s.id }}" {{ 'selected' if f_who == s.id|string }}>{{ s.name }}</option>{% endfor %}</select></fieldset>
+  {% if f_drive or f_who %}<a href="{{ url_for('tasks.index', scope='all' if everyone else None) }}" class="btn btn-ghost btn-sm">Clear filters</a>{% endif %}
+</form>
+
+{% set unassigned = open|selectattr('assignee_id', 'none')|list %}
+{% set overdue = open|selectattr('due_at')|selectattr('due_at', 'lt', now_iso)|list %}
+<div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+  {% for label, v, icon, tone in [('Open', open|length, 'circle-dashed', 'primary'), ('Overdue', overdue|length, 'alarm-clock', 'error'),
+      ('Blocked', open|selectattr('status', 'eq', 'blocked')|list|length, 'octagon-alert', 'error'), ('Unassigned', unassigned|length, 'user-round-x', 'warning'),
+      ('Important', open|selectattr('important')|list|length, 'flame', 'accent'), ('Done', (tasks|length) - (open|length), 'circle-check', 'success')] %}
+  <div class="flex items-center gap-3 rounded-box border border-base-300/60 bg-base-100 p-4"><span class="grid size-10 place-items-center rounded-xl bg-{{ tone }}/10 text-{{ tone }}"><i data-lucide="{{ icon }}" class="size-5"></i></span>
+    <div><div class="text-2xl font-extrabold">{{ v }}</div><div class="text-xs opacity-60">{{ label }}</div></div></div>
+  {% endfor %}
+</div>
+
+<div class="mb-5 flex flex-wrap items-center gap-3">
+  <div role="tablist" class="tabs tabs-box w-fit bg-base-100">
+    {% for k, l, icon in [('board', 'Board', 'columns-3'), ('list', 'List', 'list'), ('calendar', 'Calendar', 'calendar-days')] %}
+    <button role="tab" class="tab gap-2" :class="view === '{{ k }}' && 'tab-active'" @click="view = '{{ k }}'"><i data-lucide="{{ icon }}" class="size-4"></i>{{ l }}</button>{% endfor %}
+  </div>
+  {% if tasks %}<button type="button" class="btn btn-sm" x-show="view !== 'calendar'" :class="selecting ? 'btn-neutral' : 'btn-ghost border-base-300'" @click="selecting = !selecting; picked = []">
+    <i data-lucide="list-checks" class="size-4"></i><span x-text="selecting ? 'Done selecting' : 'Select tasks'"></span></button>{% endif %}
+</div>
+{# floating bar while selecting #}
+<div x-show="selecting" x-cloak x-transition class="sticky top-20 z-30 mb-4 flex flex-wrap items-center gap-2 rounded-box border border-primary/40 bg-base-100/95 p-3 shadow-lg backdrop-blur">
+  <b class="mr-2" x-text="picked.length + ' selected'"></b>
+  <button type="button" class="btn btn-ghost btn-sm" @click="pickAll()">Select all shown</button>
+  <button type="button" class="btn btn-ghost btn-sm" @click="picked = []" :disabled="!picked.length">Clear</button>
+  <span class="text-xs opacity-60">Click cards (or rows) to pick them. Use the filters above to narrow down first.</span>
+  <form method="post" action="{{ url_for('tasks.bulk_delete') }}" class="ml-auto">{{ ui.csrf() }}<input type="hidden" name="ids" :value="picked.join(',')">
+    <button class="btn btn-error btn-sm" :disabled="!picked.length" @click="if (!confirm('Delete ' + picked.length + ' task(s)? This cannot be undone.')) $event.preventDefault()">
+      <i data-lucide="trash-2" class="size-4"></i>Delete selected</button></form>
+</div>
+
+<div {{ ui.live('task-board', 12) }} x-show="view === 'board'" x-data="kanban('{{ url_for('tasks.move') }}')" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+  {% for key, label in statuses.items() %}
+  <div class="flex flex-col rounded-box border border-base-300/60 bg-base-100 p-3">
+    <div class="mb-3 flex items-center justify-between px-1"><span class="flex items-center gap-2 font-bold"><span class="status {{ {'todo': 'status-warning', 'in_progress': 'status-info', 'blocked': 'status-error', 'done': 'status-success'}[key] }}"></span>{{ label }}</span>
+      <span class="badge badge-ghost" x-text="counts['{{ key }}'] ?? 0"></span></div>
+    <div class="kanban-col min-h-48 flex-1 space-y-2 pb-6" data-col="{{ key }}">
+      {%- for t in tasks if t.status == key -%}
+      <div class="cursor-grab rounded-2xl border bg-base-100 p-3 shadow-sm transition-shadow hover:shadow-md {{ 'border-error/40' if t.important or t.status == 'blocked' else 'border-base-300/60' }}" data-id="{{ t.id }}" @click="open({{ t|tojson|forceescape }})"
+           :class="picked.includes({{ t.id|tojson|forceescape }}) && 'ring-2 ring-primary bg-primary/5'">
+        <input type="checkbox" x-show="selecting" x-cloak class="checkbox checkbox-primary checkbox-sm float-right ml-2 pointer-events-none" :checked="picked.includes({{ t.id|tojson|forceescape }})">
+        {% if t.phase %}<div class="mb-1 text-[11px] font-bold uppercase tracking-wider text-primary/80">{{ t.phase }}</div>{% endif %}
+        <div class="flex items-start gap-2"><span class="flex-1 font-semibold {{ 'line-through opacity-50' if t.status == 'done' }}">{{ t.title }}</span>
+          {% if t.important %}<i data-lucide="flame" class="size-4 text-error"></i>{% endif %}{% if t.remind %}<i data-lucide="bell-ring" class="size-4 text-info"></i>{% endif %}</div>
+        {% if t.description %}<p class="mt-1 line-clamp-2 text-sm opacity-60">{{ t.description }}</p>{% endif %}
+        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          {% if t.due_at %}<span class="badge badge-sm badge-soft gap-1 {{ 'badge-error' if t.due_at < now_iso and t.status != 'done' else 'badge-ghost' }}"><i data-lucide="clock" class="size-3"></i>{{ t.due_at|replace('T', ' ') }}</span>{% endif %}
+          {% if t.drive_title %}<span class="badge badge-sm badge-soft badge-primary">{{ t.drive_title }}</span>{% endif %}
+          {% if t.assignee %}<span class="ml-auto flex items-center gap-1.5" title="Owner">{{ ui.avatar(t.assignee, 'w-6 text-[10px]', photo=t.assignee_photo) }}<span class="max-w-24 truncate opacity-70">{{ t.assignee.split()[0] }}</span></span>
+          {% else %}<form method="post" action="{{ url_for('tasks.claim', i=t.id) }}" class="ml-auto" @click.stop>{{ ui.csrf() }}
+            <button class="btn btn-warning btn-xs"><i data-lucide="hand" class="size-3"></i>Pick up</button></form>{% endif %}
+        </div>
+      </div>
+      {%- endfor -%}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div x-show="view === 'list'" x-cloak class="card border border-base-300/60 bg-base-100"><div class="card-body p-4" x-data="datatable">
+  {% if tasks %}<table class="table"><thead><tr><th x-show="typeof selecting !== 'undefined' && selecting" x-cloak></th><th>Task</th><th>Phase</th><th>Owner</th><th>Due</th><th>Status</th><th>Flags</th><th></th></tr></thead><tbody>
+  {% for t in tasks %}<tr data-row-id="{{ t.id }}" :class="typeof picked !== 'undefined' && picked.includes({{ t.id|tojson|forceescape }}) && 'bg-primary/5'"><td x-show="typeof selecting !== 'undefined' && selecting" x-cloak><input type="checkbox" class="checkbox checkbox-primary checkbox-sm" :checked="typeof picked !== 'undefined' && picked.includes({{ t.id|tojson|forceescape }})" x-on:change="toggle({{ t.id|tojson|forceescape }})"></td><td><div class="font-semibold">{{ t.title }}</div><div class="text-xs opacity-60">{{ t.drive_title or 'General' }}</div></td>
+    <td class="text-sm">{{ t.phase or '—' }}</td><td>{% if t.assignee %}{{ t.assignee }}{% else %}<span class="badge badge-warning badge-sm">Unassigned</span>{% endif %}</td><td class="whitespace-nowrap">{{ (t.due_at or '—')|replace('T', ' ') }}</td><td>{{ ui.status_badge(t.status) }}</td>
+    <td>{% if t.important %}<span class="badge badge-error badge-sm">Important</span>{% endif %} {% if t.remind %}<span class="badge badge-info badge-sm">Reminder</span>{% endif %}</td>
+    <td class="whitespace-nowrap"><button class="btn btn-ghost btn-xs" x-on:click="edit({{ t|tojson|forceescape }})">Edit</button>
+      {% if t.due_at %}<a class="btn btn-ghost btn-xs" target="_blank" rel="noopener" href="{{ t|gcal_task }}" title="Add to Google Calendar"><i data-lucide="calendar-plus" class="size-4"></i></a>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>{% else %}{% call ui.empty('list-todo', 'No tasks yet', 'Create one to get started.') %}{% endcall %}{% endif %}
+</div></div>
+
+<template x-if="view === 'calendar'"><div class="card border border-base-300/60 bg-base-100"><div class="card-body p-4"><div x-data="calendar('{{ url_for('tasks.events') }}')"></div></div></div></template>
+
+<dialog x-ref="rmdlg" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="text-lg font-bold">Remove checklist</h3><p class="mb-4 text-sm opacity-70" x-text="rm.title"></p>
+  <form method="post" :action="'/admin/tasks/checklist/' + rm.id + '/remove'" class="space-y-2" x-data="{ which: 'all' }">{{ ui.csrf() }}
+    <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-base-300/60 p-3 has-checked:border-error has-checked:bg-error/5">
+      <input type="radio" name="which" value="all" x-model="which" class="radio radio-error radio-sm mt-0.5">
+      <span><b>All <span x-text="rm.have"></span> checklist tasks</b><span class="block text-xs opacity-60">Including ones in progress or done, and their history.</span></span></label>
+    <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-base-300/60 p-3 has-checked:border-error has-checked:bg-error/5">
+      <input type="radio" name="which" value="open" x-model="which" class="radio radio-error radio-sm mt-0.5">
+      <span><b>Only the <span x-text="rm.todo"></span> still “To do”</b><span class="block text-xs opacity-60">Keeps anything someone started or finished.</span></span></label>
+    <p class="text-xs opacity-60">Tasks you created yourself for this drive are never touched. You can add the checklist again later.</p>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" @click="$refs.rmdlg.close()">Cancel</button><button class="btn btn-error"><i data-lucide="trash-2" class="size-4"></i>Remove</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog x-ref="dlg" class="modal modal-bottom sm:modal-middle"><div class="modal-box max-w-2xl">
+  <h3 class="mb-4 flex items-center gap-2 text-lg font-bold"><i data-lucide="clipboard-pen" class="size-5 text-primary"></i><span x-text="t.id ? 'Edit task' : 'New task'"></span></h3>
+  {% include "admin/_task_form.html" %}
+</div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+# Settings for every blood-donation service. Overrides config/common.yaml; a service's config.yaml overrides this.
+# Example: put the whole product on PostgreSQL —
+# database:
+#   url: postgresql://grepx:grepx@127.0.0.1:5432/{service_db}
+
+
+catalog: product-services/blood-donation/catalog   # templates, playbook, permissions, schedules (seeded by `run.sh seed`)
+
+# The product's words for the generic services (grepx_bff.vocabulary): rows from these contracts' tables are read
+# as drives / registrations / donors (people rows keep the table name `people`, their key reads as donor_id), and
+# requests to them are translated back to events / bookings / people.
+vocabulary:
+  contracts: [people, event, booking, slot, recognition, referral, event_report, campaign]
+  fields: {event_id: drive_id, event_date: drive_date, source_event_id: source_drive_id, booking_id: registration_id,
+           person_id: donor_id, person_ids: donor_ids, event_title: drive_title, attended_on: donated_on, converted: donated}
+  values: {state: {attended: donated}}
+  nested: {stats: {attended: donated, event: drive}}
+  reasons: {UNKNOWN_EVENT: UNKNOWN_DRIVE, EVENT_CLOSED: DRIVE_CLOSED, NOT_EVENT_DAY: NOT_DRIVE_DAY, ALREADY_ATTENDED: ALREADY_DONATED,
+            UNKNOWN_PERSON: UNKNOWN_DONOR}

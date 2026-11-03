@@ -1,0 +1,26 @@
+# apps/blood-donation-bff - library lines are written by scripts/run.sh deps
+-e ../../platform/libs/grepx-contracts
+-e ../../platform/libs/grepx-config
+-e ../../platform/libs/nexus-client
+-e ../../platform/libs/grepx-auth
+-e ../../platform/libs/grepx-common
+-e ../../platform/libs/grepx-store
+-e ../../platform/libs/grepx-port-provider
+-e ../../platform/libs/grepx-web-bootstrap
+-e ../../platform/libs/nexus-logging
+-e ../../platform/libs/grepx-service
+-e ../../platform/libs/grepx-storage
+-e ../../platform/libs/grepx-bff
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+a2wsgi>=1.10
+Flask>=3.0
+Flask-Login>=0.6.3
+Flask-WTF>=1.2
+pydantic[email]>=2.7
+python-dotenv>=1.0
+openpyxl>=3.1
+Pillow>=10.0
+requests>=2.31
+authlib>=1.3

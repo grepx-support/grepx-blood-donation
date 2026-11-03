@@ -1,0 +1,11 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+Subject: {% if task.important %}⚠️ Important task{% else %}New task{% endif %}: {{ task.title }}
+<h2 style="margin:0 0 8px">Hi {{ r.first_name }}, {{ by.first_name }} assigned you a task</h2>
+<p><b>{{ task.title }}</b>{% if task.important %} <span style="color:#e11d48">· Important</span>{% endif %}</p>
+<p>{{ task.description or '' }}</p><p>⏰ Due: {{ task.due_at or 'no due date' }}</p>
+<p><a href="{{ site }}/admin/tasks" style="display:inline-block;background:#e11d48;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700">Open task board</a></p>

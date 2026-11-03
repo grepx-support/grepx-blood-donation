@@ -1,0 +1,18 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+Subject: 🏅 Your certificate from {{ drive.title if drive else org }}
+<h2 style="margin:0 0 8px">Thank you, {{ r.first_name }}! 💚</h2>
+<p>Your blood donation{% if drive %} at <b>{{ drive.title }}</b> on {{ cert.donated_on|nice_date }}{% endif %} can save up to three lives.
+As a small thank-you, here is your certificate of appreciation.</p>
+<p><a href="{{ site }}/certificate/{{ cert.id }}" style="display:inline-block;background:#e11d48;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700">View &amp; download your certificate</a></p>
+<p><img src="{{ site }}/certificate/{{ cert.id }}.png" alt="Certificate" style="width:100%;max-width:560px;border-radius:12px;border:1px solid #f3d0d7"></p>
+{% if voucher %}<div style="margin-top:16px;padding:14px 16px;border-radius:12px;background:#fff1f3;border:1px dashed #e11d48">
+<b>🎁 A gift{% if voucher.partner %} from {{ voucher.partner }}{% endif %}: {{ voucher.title }}</b>
+{% if voucher.details %}<br>{{ voucher.details }}{% endif %}
+{% if voucher.code %}<br>Your code: <b style="font-family:monospace;font-size:18px">{{ voucher.code }}</b>{% endif %}
+{% if voucher.expires_on %}<br><small>Valid until {{ voucher.expires_on|nice_date }}</small>{% endif %}</div>{% endif %}
+<p>You'll find all your certificates and rewards on <a href="{{ site }}/dashboard">your donor dashboard</a>.</p>

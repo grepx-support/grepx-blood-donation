@@ -1,0 +1,53 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Invite donors · {{ org }}{% endblock %}
+{% block body %}
+<a href="{{ url_for('drives.manage', i=d.id) }}" class="btn btn-ghost btn-sm mb-4"><i data-lucide="arrow-left" class="size-4"></i>{{ d.title }}</a>
+{% call ui.page_head('Invite donors', 'Pick who to invite with filters, check the list, then send personal invitations.', 'mail-plus') %}{% endcall %}
+<div class="grid gap-5 lg:grid-cols-3">
+  <form id="criteria" class="card h-fit border border-base-300/60 bg-base-100 lg:sticky lg:top-24" hx-get="{{ url_for('drives.invite', i=d.id) }}" hx-trigger="change, input delay:400ms"
+        hx-target="#preview" hx-select="#preview" hx-swap="outerHTML" hx-push-url="true"><div class="card-body gap-4">
+    <h3 class="card-title text-base"><i data-lucide="filter" class="size-5 text-primary"></i>Who to invite</h3>
+    <div><div class="mb-2 text-sm font-semibold">Blood groups <span class="font-normal opacity-60">(none = all)</span></div><div class="grid grid-cols-4 gap-1.5">
+      {% for g in groups %}<label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="checkbox" name="group" value="{{ g }}" class="hidden" {{ 'checked' if g in c.groups }}>{{ g }}</label>{% endfor %}</div></div>
+    <label class="flex cursor-pointer items-center justify-between"><span class="text-sm font-semibold">Eligible to donate now</span><input type="checkbox" name="eligible" value="1" class="toggle toggle-primary" {{ 'checked' if c.eligible_only }}></label>
+    <label class="flex cursor-pointer items-center justify-between"><span class="text-sm font-semibold">Not already registered for this drive</span><input type="checkbox" name="not_booked" value="1" class="toggle toggle-primary" {{ 'checked' if c.exclude_drive }}></label>
+    <div class="grid grid-cols-2 gap-3">
+      <fieldset class="fieldset py-0"><legend class="fieldset-legend">Sex</legend><select name="sex" class="select select-sm w-full"><option value="">Any</option>
+        {% for x in ['Male', 'Female'] %}<option {{ 'selected' if c.sex == x }}>{{ x }}</option>{% endfor %}</select></fieldset>
+      <fieldset class="fieldset py-0"><legend class="fieldset-legend">Min. donations</legend><input type="number" min="0" name="min_donations" value="{{ c.min_donations or '' }}" class="input input-sm w-full" placeholder="0"></fieldset>
+      <fieldset class="fieldset py-0"><legend class="fieldset-legend">Age from</legend><input type="number" min="16" name="age_min" value="{{ c.age_min or '' }}" class="input input-sm w-full" placeholder="18"></fieldset>
+      <fieldset class="fieldset py-0"><legend class="fieldset-legend">Age to</legend><input type="number" name="age_max" value="{{ c.age_max or '' }}" class="input input-sm w-full" placeholder="65"></fieldset>
+      <fieldset class="fieldset col-span-2 py-0"><legend class="fieldset-legend">Haven't donated for at least</legend><select name="not_since_days" class="select select-sm w-full">
+        {% for v, l in [(0, 'Any time'), (90, '3 months'), (180, '6 months'), (365, '1 year')] %}<option value="{{ v }}" {{ 'selected' if c.not_since_days == v }}>{{ l }}</option>{% endfor %}</select></fieldset>
+    </div>
+    <a href="{{ url_for('drives.invite', i=d.id) }}" class="btn btn-ghost btn-sm">Reset filters</a>
+  </div></form>
+
+  <form id="preview" method="post" action="{{ url_for('drives.invite', i=d.id) }}" class="card border border-base-300/60 bg-base-100 lg:col-span-2" x-data="{ all: true }">{{ ui.csrf() }}<div class="card-body gap-4">
+    <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="card-title text-base"><i data-lucide="users" class="size-5 text-primary"></i><span>{{ found|length }} donors match</span></h3>
+      <label class="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" class="checkbox checkbox-sm checkbox-primary" x-model="all" @change="$root.querySelectorAll('[name=donor]').forEach(c => c.checked = all)">Select all</label></div>
+    <div class="max-h-[26rem] divide-y divide-base-300/60 overflow-y-auto">
+      {% for p in found %}
+      <label class="flex cursor-pointer items-center gap-3 py-2 hover:bg-base-200/50">
+        <input type="checkbox" name="donor" value="{{ p.id }}" class="checkbox checkbox-sm checkbox-primary" checked>
+        {{ ui.avatar(p.name, 'w-9', photo=p.photo_id) }}<div class="min-w-0 flex-1"><div class="truncate font-semibold">{{ p.name }}</div><div class="truncate text-xs opacity-60">{{ p.phone|phone }} · {{ p.total }} donations · last {{ p.last_donation or 'never' }}</div></div>
+        {{ ui.blood(p.blood_group, 'badge-sm') }}</label>
+      {% else %}{% call ui.empty('user-search', 'Nobody matches', 'Loosen the filters on the left.') %}{% endcall %}{% endfor %}
+    </div>
+    {% if found %}
+    <div><div class="mb-2 text-sm font-semibold">Send by</div><div class="flex flex-wrap gap-2">
+      {% for key, icon in [('email', 'mail'), ('whatsapp', 'message-circle'), ('sms', 'smartphone')] %}{% if key in channels %}
+      <label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="checkbox" name="channels" value="{{ key }}" class="hidden" {{ 'checked' if key != 'sms' }}><i data-lucide="{{ icon }}" class="size-4"></i>{{ key|capitalize }}</label>{% endif %}{% endfor %}</div></div>
+    <textarea name="note" rows="2" class="textarea w-full" placeholder="Personal note (optional) — e.g. 'We're short of O- this month, your help means a lot!'"></textarea>
+    <button class="btn btn-primary"><i data-lucide="send" class="size-4"></i>Send invitations</button>
+    {% endif %}
+  </div></form>
+</div>
+{% endblock %}

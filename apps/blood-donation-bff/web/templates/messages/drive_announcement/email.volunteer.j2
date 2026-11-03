@@ -1,0 +1,11 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+Subject: 🙌 Volunteers needed: {{ drive.title }} ({{ drive.drive_date|nice_date }})
+<h2 style="margin:0 0 8px">Hi {{ r.first_name }}, can you help on the day?</h2>
+<p>We're running <b>{{ drive.title }}</b> at {{ drive.venue }} on {{ drive.drive_date|nice_date }} ({{ drive.time_slot or 'all day' }}).</p>
+<p>Check your task board for set-up, registration desk and refreshment duties.</p>
+<p><a href="{{ site }}/admin/tasks" style="display:inline-block;background:#e11d48;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700">Open my tasks</a></p>

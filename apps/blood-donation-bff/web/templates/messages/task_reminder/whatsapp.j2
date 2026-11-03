@@ -1,0 +1,9 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+⏰ Hi {{ r.first_name }}, reminder: *{{ task.title }}* is {{ '*overdue*' if overdue else 'due soon' }} ({{ task.due_at }}){% if task.important %} ⚠️{% endif %}.
+Mark it done 👇
+{{ site }}/admin/tasks

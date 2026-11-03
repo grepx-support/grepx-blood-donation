@@ -1,0 +1,12 @@
+# Platform defaults for every service (a project file, then the service's own config.yaml, override these).
+nexus:
+  host: 127.0.0.1
+  port: 7878
+logging:
+  log_dir: logs
+# Each service's private database. {service} / {service_db} become the service name.
+# sqlite:///data/{service}.db | postgresql://user:pass@host:5432/{service_db} | mongodb://host:27017/{service_db} | memory://
+database:
+  url: sqlite:///data/{service}.db
+# The product's own settings (roles, phone, links, person, messages, plugins) live in its deployment file,
+# named by grepx.workspace.yaml `deployment:` - see product-services/<product>/deployment.yaml.

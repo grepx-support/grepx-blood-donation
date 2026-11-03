@@ -1,0 +1,5 @@
+# Recurring jobs registered with the common scheduler-service.
+schedules:
+  - {schedule_id: task-reminders, job: task-reminders, target_service: task-service, kind: EVERY_MINUTES, every_minutes: 15}
+  - {schedule_id: event-reminders, job: event-reminders, target_service: booking-service, kind: EVERY_MINUTES, every_minutes: 60}
+  - {schedule_id: eligible-again, job: eligible-again, target_service: donation-service, kind: DAILY_AT, at: "09:00"}

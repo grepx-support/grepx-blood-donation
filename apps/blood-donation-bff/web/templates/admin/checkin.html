@@ -1,0 +1,79 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import vendor %}
+{% block title %}Check-in · {{ org }}{% endblock %}
+{% block vendor %}{{ vendor('scanner') }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Check-in desk', 'Scan donor cards or search by name. Every tap updates the drive instantly.', 'scan-line') %}
+  {% if d %}<a class="btn btn-ghost border-base-300" href="{{ url_for('kiosk.index', i=d.id) }}" target="_blank"><i data-lucide="tablet-smartphone" class="size-4"></i>Self check-in page</a>
+  <button class="btn btn-primary" onclick="walkin.showModal(); setTimeout(() => document.getElementById('lookup-q').focus(), 50)"><i data-lucide="user-plus" class="size-4"></i>Walk-in</button>{% endif %}
+{% endcall %}
+{% if d %}
+<form class="mb-5"><select name="drive" class="select w-full max-w-md" onchange="this.form.submit()">
+  {% for x in drives %}<option value="{{ x.id }}" {{ 'selected' if x.id == d.id }}>{{ x.title }} · {{ x.drive_date|nice_date }}</option>{% endfor %}</select></form>
+
+<div class="grid gap-5 lg:grid-cols-3">
+  <div class="space-y-5">
+    <div class="card border border-base-300/60 bg-base-100" x-data="scanner('{{ url_for('checkin.scan', drive_id=d.id) }}')"><div class="card-body items-center text-center">
+      <span class="grid size-16 place-items-center rounded-3xl bg-primary/10 text-primary"><i data-lucide="qr-code" class="size-8"></i></span>
+      <h3 class="card-title">Scan donor card</h3><p class="text-sm opacity-60">Donors show the QR on their dashboard.</p>
+      <div x-show="open" x-cloak class="w-full"><div id="qr-reader" class="w-full overflow-hidden rounded-2xl"></div></div>
+      <button class="btn btn-primary btn-wide" x-show="!open" @click="start()"><i data-lucide="camera" class="size-4"></i>Start camera</button>
+      <button class="btn btn-ghost btn-wide" x-show="open" x-cloak @click="stop()">Stop camera</button>
+    </div></div>
+    {% set donated = people|selectattr('status', 'eq', 'donated')|list|length %}{% set total = people|rejectattr('status', 'eq', 'no_show')|list|length %}
+    <div class="card border border-base-300/60 bg-base-100"><div class="card-body items-center">
+      <div class="radial-progress text-success" style="--value:{{ donated|pct(total or 1) }};--size:8rem;--thickness:.7rem">
+        <div class="text-center text-base-content"><div class="text-2xl font-extrabold">{{ donated }}/{{ total }}</div><div class="text-xs opacity-60">donated</div></div></div>
+    </div></div>
+  </div>
+
+  <div class="card border border-base-300/60 bg-base-100 lg:col-span-2" x-data="{ q: '' }"><div class="card-body">
+    <label class="input w-full"><i data-lucide="search" class="size-4 opacity-50"></i><input x-model="q" placeholder="Search name or phone…" class="grow"></label>
+    <div {{ ui.live('attendees') }} class="mt-2 divide-y divide-base-300/60">
+      {% if d and not drive_day %}<div role="alert" class="alert alert-soft alert-info my-2 text-sm"><i data-lucide="calendar-clock" class="size-4"></i>
+        <span><b>Donated</b> and <b>No-show</b> open on the drive day, {{ d.drive_date|nice_date }}. Until then you can confirm people.</span></div>{% endif %}
+      {% for p in people %}
+      <div class="flex flex-wrap items-center gap-3 py-3" x-show="!q || {{ (p.name ~ ' ' ~ p.phone)|lower|tojson|forceescape }}.includes(q.toLowerCase())">
+        {{ ui.avatar(p.name, 'w-10', photo=p.photo_id) }}
+        <div class="min-w-0 flex-1"><div class="truncate font-semibold">{{ p.name }}</div><div class="text-xs opacity-60">{{ p.phone|phone }}{% if p.source in ('walkin', 'kiosk') %} · walk-in{% endif %}</div></div>
+        {{ ui.slot_badge(p) }}{{ ui.status_badge(p.status) }}
+        <div class="join">
+          {% for s, icon, tip in [('confirmed', 'log-in', 'Arrived'), ('donated', 'droplet', 'Donated'), ('no_show', 'user-x', 'No-show'), ('not_eligible', 'ban', 'Not eligible')] %}
+          {% set closed = s in ('donated', 'no_show') and not drive_day %}
+          <button class="join-item btn btn-sm {{ 'btn-primary' if p.status == s else 'btn-ghost border-base-300' }}" {{ 'disabled' if closed }}
+            title="{{ tip ~ (' — only on the drive day (' ~ d.drive_date ~ ')' if closed else '') }}"
+            hx-post="{{ url_for('checkin.mark', drive_id=d.id, iid=p.id, status=s) }}" hx-target="#attendees" hx-select="#attendees" hx-swap="outerHTML">
+            <i data-lucide="{{ icon }}" class="size-4"></i><span class="hidden sm:inline">{{ tip }}</span></button>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}{% call ui.empty('users', 'Nobody registered yet', 'Add walk-ins or scan donor cards as people arrive.') %}{% endcall %}{% endfor %}
+    </div>
+  </div></div>
+</div>
+
+<dialog id="walkin" class="modal modal-bottom sm:modal-middle"><div class="modal-box max-w-xl" x-data="{ tab: 'find' }">
+  <h3 class="mb-1 text-lg font-bold">Walk-in donor</h3><p class="mb-4 text-sm opacity-60">Search first — if they're new, register them in seconds.</p>
+  <div role="tablist" class="tabs tabs-box mb-4">
+    <button role="tab" class="tab flex-1" :class="tab === 'find' && 'tab-active'" @click="tab = 'find'"><i data-lucide="search" class="mr-1 size-4"></i>Find registered donor</button>
+    <button role="tab" class="tab flex-1" :class="tab === 'new' && 'tab-active'" @click="tab = 'new'"><i data-lucide="user-plus" class="mr-1 size-4"></i>New donor</button>
+  </div>
+  <div x-show="tab === 'find'">
+    <label class="input w-full"><i data-lucide="search" class="size-4 opacity-50"></i>
+      <input id="lookup-q" name="q" class="grow" placeholder="Name, phone or email…" autocomplete="off"
+             hx-get="{{ url_for('checkin.lookup', drive_id=d.id) }}" hx-trigger="input changed delay:250ms" hx-target="#lookup-results">
+      <span class="htmx-indicator loading loading-spinner loading-xs"></span></label>
+    <div id="lookup-results" class="mt-2 max-h-80 overflow-y-auto"><p class="py-6 text-center text-sm opacity-60">Type a name, phone or email.</p></div>
+  </div>
+  <div x-show="tab === 'new'" x-cloak>{{ ui.quick_register(url_for('checkin.walkin', drive_id=d.id)) }}</div>
+  <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="walkin.close()">Close</button></div>
+</div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+{% else %}{% call ui.empty('calendar-x', 'No drives to check in', 'Create a drive first.') %}{% endcall %}{% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import for_widgets %}
+{% block title %}Analytics · {{ org }}{% endblock %}
+{% block vendor %}{{ for_widgets(widgets) }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Analytics', 'Live numbers and flows. Admins choose what each audience can see.', 'chart-pie') %}
+  {% if current_user.is_admin %}<a href="{{ url_for('analytics.access') }}" class="btn btn-primary"><i data-lucide="sliders-horizontal" class="size-4"></i>Manage access</a>{% endif %}
+{% endcall %}
+{% if widgets %}<div class="grid gap-5 lg:grid-cols-3">{% for w in widgets %}{{ ui.widget(w) }}{% endfor %}</div>
+{% else %}{% call ui.empty('eye-off', 'No analytics shared with you yet', 'Ask an admin to enable widgets for your role.') %}{% endcall %}{% endif %}
+{% endblock %}

@@ -1,0 +1,11 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+Subject: ⏰ Tomorrow: {{ b.title }}{% if b.slot_start %} at {{ b.slot_start }}{% endif %}
+<h2 style="margin:0 0 8px">See you tomorrow, {{ r.first_name }}!</h2>
+<p><b>{{ b.title }}</b><br>📅 {{ b.drive_date|nice_date }} · 🕒 {{ (b.slot_start ~ '–' ~ b.slot_end) if b.slot_start else (b.time_slot or 'All day') }}<br>📍 {{ b.venue }}</p>
+<p>Tonight: sleep well. Tomorrow: eat a proper meal and drink plenty of water. Bring your ID.</p>
+<p>Plans changed? No problem — <a href="{{ site }}/drive/{{ b.drive }}#book">change your time or cancel</a> so someone else can take your place.</p>

@@ -1,0 +1,25 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% set CDN = {
+  'apex': ['https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js'],
+  'sortable': ['https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js'],
+  'swiper': ['https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.js'],
+  'datatable': ['https://cdn.jsdelivr.net/npm/simple-datatables@9.2.2/dist/umd/simple-datatables.js'],
+  'calendar': ['https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'],
+  'mermaid': ['https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js'],
+  'qr': ['https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js'],
+  'scanner': ['https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js'],
+} %}
+{% set CSS = {'swiper': 'https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.css',
+              'datatable': 'https://cdn.jsdelivr.net/npm/simple-datatables@9.2.2/dist/style.css'} %}
+{% macro vendor() -%}
+{% for lib in varargs %}{% if lib in CSS %}<link rel="stylesheet" href="{{ CSS[lib] }}">{% endif %}
+{% for src in CDN.get(lib, []) %}<script src="{{ src }}"></script>{% endfor %}{% endfor %}
+{%- endmacro %}
+{% macro for_widgets(widgets) -%}
+{{ vendor('apex', 'mermaid' if widgets|selectattr('kind', 'eq', 'flow')|list else '') }}
+{%- endmacro %}

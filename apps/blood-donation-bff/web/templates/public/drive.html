@@ -1,0 +1,90 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/public.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}{{ d.title }} · {{ org }}{% endblock %}
+{% block meta %}<meta property="og:site_name" content="{{ org }}"><meta property="og:title" content="🩸 {{ d.title }} · {{ d.drive_date|nice_date }}">
+<meta property="og:description" content="{{ d.venue }} · {{ d.time_slot or 'All day' }}. Book a time and save up to three lives.">
+<meta property="og:image" content="{{ site }}{{ url_for('social.poster', i=d.id) }}"><meta property="og:image:width" content="1080"><meta property="og:image:height" content="1080">
+<meta property="og:url" content="{{ site }}{{ url_for('public.drive', i=d.id) }}"><meta name="twitter:card" content="summary_large_image">{% endblock %}
+{% block body %}
+<section class="relative overflow-hidden text-white">
+  <div class="drive-img absolute inset-0" {% if d.image_url %}style="--img:url('{{ d.image_url|media }}')"{% endif %}></div>
+  <div class="absolute inset-0 bg-linear-to-t from-black/85 via-black/45 to-black/10"></div>
+  <div class="relative mx-auto max-w-7xl px-4 pb-12 pt-24" x-data="countdown('{{ d.drive_date }}')">
+    <a href="{{ url_for('public.index') }}#events" class="btn btn-ghost btn-sm mb-6 text-white"><i data-lucide="arrow-left" class="size-4"></i>All drives</a>
+    <span class="badge frost" x-text="label"></span>
+    <h1 class="mt-3 max-w-3xl text-4xl font-extrabold md:text-6xl rise">{{ d.title }}</h1>
+    <p class="mt-4 flex flex-wrap gap-x-5 gap-y-2 opacity-90">
+      <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="size-5"></i>{{ d.drive_date|nice_date }}</span>
+      <span class="flex items-center gap-1.5"><i data-lucide="clock" class="size-5"></i>{{ d.time_slot or 'All day' }}</span>
+      <span class="flex items-center gap-1.5"><i data-lucide="map-pin" class="size-5"></i>{{ d.venue }}</span></p>
+  </div>
+</section>
+
+<div class="mx-auto grid max-w-7xl gap-6 px-4 py-10 lg:grid-cols-3">
+  <div class="space-y-6 lg:col-span-2">
+    <div class="card border border-base-300/60 bg-base-100"><div class="card-body"><h2 class="card-title"><i data-lucide="info" class="size-5 text-primary"></i>About this drive</h2>
+      <p class="opacity-80">{{ d.description or 'Join us and give the gift of life. Walk-ins are welcome; registering ahead helps us plan.' }}</p></div></div>
+    {% if images|length > 1 %}
+    <div class="card border border-base-300/60 bg-base-100" x-data="{ big: '' }"><div class="card-body">
+      <h2 class="card-title"><i data-lucide="images" class="size-5 text-primary"></i>Pictures</h2>
+      <div class="grid grid-cols-{{ images|length }} gap-3">{% for url in images %}
+        <button type="button" @click="big = '{{ url|media }}'; $refs.view.showModal()" class="aspect-video overflow-hidden rounded-2xl border border-base-300/60 transition hover:scale-[1.02] hover:shadow-lg">
+          <img src="{{ url|media }}" alt="{{ d.title }} picture {{ loop.index }}" class="size-full object-cover" loading="lazy"></button>{% endfor %}</div>
+      <dialog x-ref="view" class="modal"><div class="modal-box max-w-5xl p-2"><img :src="big" alt="" class="w-full rounded-xl"></div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+    </div></div>
+    {% endif %}
+    <div class="card border border-base-300/60 bg-base-100"><div class="card-body"><h2 class="card-title"><i data-lucide="clipboard-check" class="size-5 text-primary"></i>Before you come</h2>
+      <ul class="grid gap-3 sm:grid-cols-2">{% for icon, t in [('utensils', 'Eat a proper meal 3 hours before'), ('glass-water', 'Drink 500 ml of water'), ('id-card', 'Bring your NRIC or ID'), ('moon', 'Sleep well the night before')] %}
+        <li class="flex items-center gap-3 rounded-2xl bg-base-200/70 p-3"><i data-lucide="{{ icon }}" class="size-5 text-primary"></i>{{ t }}</li>{% endfor %}</ul></div></div>
+    <div class="card overflow-hidden border border-base-300/60 bg-base-100">
+      <iframe title="Map" class="h-72 w-full border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q={{ d.venue|urlencode }}&output=embed"></iframe>
+      <div class="card-body flex-row items-center justify-between"><span class="flex items-center gap-2 font-semibold"><i data-lucide="map-pin" class="size-5 text-primary"></i>{{ d.venue }}</span>
+        <a class="btn btn-ghost btn-sm border-base-300" target="_blank" rel="noopener" href="{{ d.venue|maps }}">Directions</a></div>
+    </div>
+  </div>
+
+  <aside class="lg:sticky lg:top-24 lg:self-start">
+    <div class="card border border-base-300/60 bg-base-100 shadow-xl"><div class="card-body gap-4">
+      <div class="flex items-center gap-4"><div class="flex flex-col items-center rounded-2xl bg-primary px-4 py-2 text-primary-content"><b class="text-3xl leading-none">{{ d.drive_date|day }}</b><span class="text-xs font-bold uppercase">{{ d.drive_date|month }}</span></div>
+        <div><div class="font-bold">{{ d.drive_date|nice_date }}</div><div class="text-sm opacity-60">{{ d.time_slot or 'All day' }}</div></div></div>
+      {{ ui.fill(d) }}
+      {% if booking %}
+        <div role="alert" class="alert alert-success alert-soft"><i data-lucide="badge-check" class="size-5"></i>
+          <span>You're <b>{{ booking.status|replace('_', ' ') }}</b>{% if booking.slot_start %} for <b>{{ booking.slot_start }}–{{ booking.slot_end }}</b>{% endif %}.</span></div>
+        <form method="post" action="{{ url_for('public.cancel', i=d.id) }}">{{ ui.csrf() }}<button class="btn btn-ghost btn-sm w-full text-error">Cancel my booking</button></form>
+      {% endif %}
+      {% if slots %}
+      <form id="book" method="post" action="{{ url_for('public.confirm', i=d.id) }}" class="scroll-mt-28 space-y-3" x-data="{ pick: '{{ booking.slot_id if booking and booking.slot_id else '' }}' }">{{ ui.csrf() }}
+        <div class="flex items-center justify-between"><span class="font-semibold">{{ 'Change your time' if booking and booking.slot_id else 'Pick your time' }}</span><span class="text-xs opacity-60">No queues ⏱️</span></div>
+        <div class="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto pr-1">
+          {% for s in slots %}{% set left = s.capacity - s.booked %}{% set mine = booking and booking.slot_id == s.id %}
+          <label class="flex cursor-pointer flex-col items-center rounded-2xl border p-2 text-center transition has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content {{ 'pointer-events-none opacity-40' if left <= 0 and not mine else 'border-base-300 hover:border-primary' }}">
+            <input type="radio" name="slot_id" value="{{ s.id }}" class="hidden" x-model="pick" {{ 'disabled' if left <= 0 and not mine }}>
+            <b class="tabular-nums">{{ s.starts_at }}</b><span class="text-[11px] opacity-80">{{ 'Full' if left <= 0 and not mine else (left ~ ' left') }}</span></label>
+          {% endfor %}
+        </div>
+        {% if current_user.is_authenticated %}<button class="btn btn-primary w-full" :disabled="!pick"><i data-lucide="calendar-check" class="size-4"></i><span x-text="pick ? 'Book this time' : 'Choose a time above'">Book</span></button>
+        {% else %}<a class="btn btn-primary w-full" href="{{ url_for('auth.register', drive=d.id) }}">Sign up to book a time</a>
+          <p class="text-center text-xs opacity-60">Already a donor? <a class="link" href="{{ url_for('auth.login', next=request.path) }}">Log in</a></p>{% endif %}
+        <button type="button" class="btn btn-ghost btn-sm w-full" @click="$dispatch('interest', {id: {{ d.id|tojson|forceescape }}, title: {{ d.title|tojson|forceescape }}})">Not sure yet? Show interest</button>
+      </form>
+      {% elif not booking %}<div class="grid grid-cols-2 gap-2 [&_form]:contents [&_.btn]:w-full">{{ ui.drive_actions(d) }}</div>{% endif %}
+      <div class="divider my-0 text-xs opacity-60">More</div>
+      <a class="btn btn-ghost btn-sm border-base-300" href="{{ url_for('kiosk.index', i=d.id) }}"><i data-lucide="map-pin-check" class="size-4"></i>At the venue? Check in here</a>
+      <a class="link text-center text-xs opacity-60" href="{{ url_for('public.drive_ics', i=d.id) }}">Download .ics (Apple / Outlook)</a>
+      <a class="btn btn-success btn-soft" target="_blank" rel="noopener" href="https://wa.me/{{ wa_number }}?text={{ ('Hi! I have a question about ' ~ d.title ~ ' on ' ~ d.drive_date)|urlencode }}"><i data-lucide="message-circle" class="size-5"></i>Ask on WhatsApp</a>
+      <div class="grid grid-cols-2 gap-2">
+        <a class="btn btn-ghost border-base-300" target="_blank" rel="noopener" href="{{ d|gcal_drive(booking.slot_start if booking else None, booking.slot_end if booking else None) }}"><i data-lucide="calendar-plus" class="size-4"></i>Google Cal</a>
+        {{ ui.share(site ~ url_for('public.drive', i=d.id), d.title, '🩸 ' ~ d.title ~ ' on ' ~ d.drive_date|nice_date ~ ' at ' ~ d.venue ~ '. Join me and save lives!', 'btn-ghost border-base-300', 'Share', url_for('social.poster', i=d.id)) }}
+      </div>
+    </div></div>
+  </aside>
+</div>
+{% endblock %}

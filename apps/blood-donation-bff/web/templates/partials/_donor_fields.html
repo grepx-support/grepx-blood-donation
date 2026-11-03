@@ -1,0 +1,18 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{# Shared donor fields; expects `u` (the donor being edited). #}
+<div class="grid gap-3 sm:grid-cols-2">
+  <fieldset class="fieldset"><legend class="fieldset-legend">Full name</legend><input name="name" value="{{ u.name }}" {{ rules('name') }} required class="input w-full"></fieldset>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Phone / WhatsApp</legend><input name="phone" value="{{ u.phone|phone }}" {{ rules('phone') }} required class="input w-full"></fieldset>
+  <fieldset class="fieldset sm:col-span-2"><legend class="fieldset-legend">Email{{ ' (optional)' if email_optional }}</legend><input name="email" value="{{ u.email if '@no-email.local' not in u.email }}" {{ rules('email') }} {{ 'required' if not email_optional }} class="input w-full"></fieldset>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Blood group</legend><select name="blood_group" class="select w-full"><option value="">Not sure</option>
+    {% for g in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}<option {{ 'selected' if u.blood_group == g }}>{{ g }}</option>{% endfor %}</select></fieldset>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Sex</legend><select name="sex" class="select w-full">
+    {% for x in ['Male', 'Female'] %}<option {{ 'selected' if u.sex == x }}>{{ x }}</option>{% endfor %}</select></fieldset>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Weight (kg)</legend><input name="weight" value="{{ u.weight or '' }}" {{ rules('weight') }} class="input w-full"></fieldset>
+  <fieldset class="fieldset"><legend class="fieldset-legend">Date of birth</legend><input name="dob" value="{{ u.dob or '' }}" {{ rules('dob') }} class="input w-full"></fieldset>
+</div>

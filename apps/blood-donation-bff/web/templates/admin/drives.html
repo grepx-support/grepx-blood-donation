@@ -1,0 +1,35 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Drives · {{ org }}{% endblock %}
+{% block body %}
+{% call ui.page_head('Drives', 'Create drives, track sign-ups and run the attendance board.', 'calendar-heart') %}
+  <a href="{{ url_for('drives.new') }}" class="btn btn-primary"><i data-lucide="plus" class="size-4"></i>New drive</a>
+{% endcall %}
+{% set n_up = drives|selectattr('drive_date', 'ge', today_iso)|list|length %}
+<div x-data="{ tab: 'upcoming' }">
+  <div role="tablist" class="tabs tabs-box mb-6 w-fit bg-base-100">
+    {% for k, l, n in [('upcoming', 'Upcoming', n_up), ('past', 'Past', drives|length - n_up), ('all', 'All', drives|length)] %}
+    <button role="tab" class="tab gap-2 {{ 'tab-active' if k == 'upcoming' }}" :class="tab === '{{ k }}' && 'tab-active'" @click="tab = '{{ k }}'">{{ l }} <span class="badge badge-ghost badge-sm">{{ n }}</span></button>{% endfor %}
+  </div>
+  {% if drives %}
+  <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    {% for d in drives %}{% set when = 'upcoming' if d.drive_date >= today_iso else 'past' %}
+    <a href="{{ url_for('drives.manage', i=d.id) }}" x-show="tab === 'all' || tab === '{{ when }}'" {{ 'style="display:none"'|safe if when == 'past' }} class="card overflow-hidden border border-base-300/60 bg-base-100 lift">
+      <div class="drive-img relative h-36" {% if d.image_url %}style="--img:url('{{ d.image_url|media }}')"{% endif %}>
+        <div class="absolute left-3 top-3 flex flex-col items-center rounded-xl bg-base-100 px-2.5 py-1 text-primary shadow"><b class="leading-none">{{ d.drive_date|day }}</b><span class="text-[10px] font-bold uppercase">{{ d.drive_date|month }}</span></div>
+        {% if d.status == 'completed' %}<span class="badge badge-success absolute right-3 top-3 gap-1"><i data-lucide="badge-check" class="size-3"></i>Completed</span>
+        {% elif when == 'past' %}<span class="badge badge-warning absolute right-3 top-3">Past · not completed</span>{% endif %}</div>
+      <div class="card-body gap-2 p-5"><div class="flex items-start gap-2"><h3 class="flex-1 font-bold">{{ d.title }}</h3>
+          <span role="button" tabindex="0" class="btn btn-ghost btn-xs" title="Copy to a new date" onclick="event.preventDefault(); location.href='{{ url_for('drives.new', **{'from': d.id}) }}'"><i data-lucide="copy-plus" class="size-4"></i>Copy</span></div><p class="flex items-center gap-1 text-sm opacity-60"><i data-lucide="map-pin" class="size-4"></i>{{ d.venue }}</p>
+        {{ ui.fill(d) }}<div class="text-xs opacity-60">{{ d.donated }} donated</div></div>
+    </a>{% endfor %}
+  </div>
+  {% else %}{% call ui.empty('calendar-plus', 'No drives yet', 'Create your first drive — it appears on the website instantly.') %}<a href="{{ url_for('drives.new') }}" class="btn btn-primary btn-sm">Create drive</a>{% endcall %}{% endif %}
+</div>
+{% endblock %}

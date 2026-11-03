@@ -1,0 +1,177 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Donors · {{ org }}{% endblock %}
+{% macro field(k, label, type='text', model=None, required=False) %}
+<fieldset class="fieldset py-0"><legend class="fieldset-legend">{{ label }}{{ ' *' if required }}</legend>
+  {% if k == 'blood_group' %}<select name="{{ k }}" {{ ('x-model="' ~ model ~ '"')|safe if model }} class="select select-sm w-full"><option value="">Not sure</option>{% for b in groups %}<option>{{ b }}</option>{% endfor %}</select>
+  {% elif k == 'sex' %}<select name="{{ k }}" {{ ('x-model="' ~ model ~ '"')|safe if model }} class="select select-sm w-full"><option value="">—</option><option>Male</option><option>Female</option></select>
+  {% elif k in ('name', 'phone', 'email', 'weight', 'dob') %}<input name="{{ k }}" {{ rules(k) }} {{ ('x-model="' ~ model ~ '"')|safe if model }} {{ 'required' if required }} class="input input-sm w-full">
+  {% else %}<input name="{{ k }}" type="{{ type }}" {{ ('x-model="' ~ model ~ '"')|safe if model }} {{ 'required' if required }} class="input input-sm w-full">{% endif %}
+</fieldset>{% endmacro %}
+{% macro selection_inputs() %}<input type="hidden" name="ids" :value="selected.join(',')"><input type="hidden" name="scope" :value="allMatching ? 'all' : 'ids'"><input type="hidden" name="qs" :value="qs">{{ ui.csrf() }}{% endmacro %}
+{% macro channel_picks() %}<div class="flex flex-wrap gap-2">{% for key, icon in [('email', 'mail'), ('whatsapp', 'message-circle'), ('sms', 'smartphone')] %}{% if key in channels %}
+  <label class="btn btn-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"><input type="checkbox" name="channels" value="{{ key }}" class="hidden" {{ 'checked' if key != 'sms' }}><i data-lucide="{{ icon }}" class="size-4"></i>{{ key|capitalize }}</label>{% endif %}{% endfor %}</div>{% endmacro %}
+
+{% block body %}
+<div x-data="donorGrid({{ total }}, '{{ qs }}')">
+{% call ui.page_head('Donors', '{:,}'.format(stats.all) ~ ' registered donors · search, group, select and act on many at once', 'users') %}
+  <button class="btn btn-primary" @click="open('dlg-add')"><i data-lucide="user-plus" class="size-4"></i>Add donor</button>
+  <button class="btn btn-ghost border-base-300" @click="open('dlg-many')"><i data-lucide="table-2" class="size-4"></i>Add many</button>
+  {% if current_user.can('bulk_import') %}<a href="{{ url_for('imports.index') }}" class="btn btn-ghost border-base-300"><i data-lucide="file-spreadsheet" class="size-4"></i>Import Excel</a>{% endif %}
+  <a href="{{ url_for('donors.export', **g.args(page=None)) }}" class="btn btn-ghost border-base-300"><i data-lucide="download" class="size-4"></i>Export view</a>
+{% endcall %}
+
+<form id="filters" hx-get="{{ url_for('donors.rows') }}" hx-target="#grid" hx-select="#grid" hx-swap="outerHTML"
+      hx-trigger="change, input changed delay:300ms from:#q, submit" @submit.prevent>
+  {# eligibility groups #}
+  <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    {% for key, label, icon, tone, hint in [('', 'All donors', 'users', 'primary', ''), ('eligible', 'Eligible now', 'circle-check', 'success', 'can donate'),
+        ('waiting', 'Waiting', 'hourglass', 'warning', 'donated recently'), ('new', 'New', 'sparkles', 'info', 'no donation yet')] %}
+    <label class="cursor-pointer rounded-box border border-base-300/60 bg-base-100 p-4 transition has-checked:border-{{ tone }} has-checked:ring-2 has-checked:ring-{{ tone }}/30 hover:shadow-md">
+      <input type="radio" name="status" value="{{ key }}" class="hidden" {{ 'checked' if g.status == key }}>
+      <div class="flex items-center gap-3"><span class="grid size-10 place-items-center rounded-xl bg-{{ tone }}/10 text-{{ tone }}"><i data-lucide="{{ icon }}" class="size-5"></i></span>
+        <div><div class="text-2xl font-extrabold tabular-nums">{{ '{:,}'.format(stats[key or 'all']) }}</div><div class="text-xs opacity-60">{{ label }}{{ ' · ' ~ hint if hint }}</div></div></div>
+    </label>{% endfor %}
+  </div>
+
+  <div class="grid gap-4 lg:grid-cols-4">
+    {# left: blood groups + saved groups #}
+    <aside class="space-y-4">
+      <div class="card border border-base-300/60 bg-base-100"><div class="card-body p-4">
+        <h3 class="text-sm font-bold">Blood groups</h3>
+        <div class="grid grid-cols-3 gap-1.5">
+          {% for b in groups + ['unknown'] %}
+          <label class="flex cursor-pointer flex-col items-center rounded-xl border border-base-300/60 py-1.5 text-sm transition has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content">
+            <input type="checkbox" name="group" value="{{ b }}" class="hidden" {{ 'checked' if b in g.groups }}>
+            <b>{{ '?' if b == 'unknown' else b }}</b><span class="text-[11px] opacity-70 tabular-nums">{{ '{:,}'.format(facets.get(b, 0)) }}</span></label>{% endfor %}
+        </div>
+      </div></div>
+      <div class="card border border-base-300/60 bg-base-100"><div class="card-body p-4">
+        <h3 class="flex items-center justify-between text-sm font-bold">Saved groups <button type="button" class="btn btn-ghost btn-xs" @click="open('dlg-segment')"><i data-lucide="bookmark-plus" class="size-4"></i>Save view</button></h3>
+        <ul class="menu menu-sm w-full p-0">
+          {% for s in segments %}<li class="group"><a href="{{ url_for('donors.index') }}?{{ s.query }}" class="justify-between"><span class="flex items-center gap-2"><i data-lucide="bookmark" class="size-4 text-primary"></i>{{ s.name }}</span></a></li>
+          {% else %}<li class="px-2 py-1 text-xs opacity-60">Filter the list, then “Save view” to reuse it — e.g. “O- eligible”.</li>{% endfor %}
+        </ul>
+      </div></div>
+    </aside>
+
+    {# right: search + grid #}
+    <section class="card border border-base-300/60 bg-base-100 lg:col-span-3"><div class="card-body p-4">
+      <div class="flex flex-wrap items-end gap-2">
+        <label class="input min-w-64 flex-1"><i data-lucide="search" class="size-4 opacity-50"></i><input id="q" name="q" value="{{ g.q }}" placeholder="Search name, email or phone…" class="grow" autocomplete="off">
+          <span class="htmx-indicator loading loading-spinner loading-xs"></span></label>
+        <select name="people" class="select w-36" title="Who to show"><option value="">Donors</option>
+          {% for v, l in [('volunteer', 'Volunteers'), ('admin', 'Admins'), ('all', 'Everyone')] %}<option value="{{ v }}" {{ 'selected' if g.people == v }}>{{ l }}</option>{% endfor %}</select>
+        <select name="sex" class="select w-32"><option value="">Any sex</option>{% for x in ['Male', 'Female'] %}<option {{ 'selected' if g.sex == x }}>{{ x }}</option>{% endfor %}</select>
+        <select name="min_donations" class="select w-40"><option value="">Any donations</option>{% for n in [1, 3, 5, 10] %}<option value="{{ n }}" {{ 'selected' if g.min_donations == n }}>{{ n }}+ donations</option>{% endfor %}</select>
+        <select name="per" class="select w-28">{% for n in [25, 50, 100, 200] %}<option value="{{ n }}" {{ 'selected' if g.per == n }}>{{ n }} / page</option>{% endfor %}</select>
+        <input type="hidden" name="sort" value="{{ g.sort }}"><input type="hidden" name="dir" value="{{ 'desc' if g.desc }}">
+        <a href="{{ url_for('donors.index') }}" class="btn btn-ghost">Reset</a>
+      </div>
+      {% include "admin/_donor_rows.html" %}
+    </div></section>
+  </div>
+</form>
+
+{# selection bar #}
+<div x-show="count" x-cloak x-transition class="fixed inset-x-0 bottom-4 z-40 mx-auto flex w-fit max-w-[95vw] flex-wrap items-center gap-2 rounded-box border border-base-300 bg-base-100/95 p-2 pl-4 shadow-2xl backdrop-blur">
+  <span class="font-semibold"><span x-text="count.toLocaleString()"></span> selected</span>
+  <button class="btn btn-link btn-sm" x-show="!allMatching && total > selected.length" @click="allMatching = true">Select all <span x-text="total.toLocaleString()"></span> matching</button>
+  <div class="divider divider-horizontal mx-0"></div>
+  {% if current_user.can('notify') %}
+  <button class="btn btn-primary btn-sm" @click="open('dlg-invite')"><i data-lucide="calendar-heart" class="size-4"></i>Invite to drive</button>
+  <button class="btn btn-sm" @click="open('dlg-message')"><i data-lucide="send" class="size-4"></i>Message</button>{% endif %}
+  <button class="btn btn-sm" @click="open('dlg-bulkedit')"><i data-lucide="pencil-line" class="size-4"></i>Edit</button>
+  <form method="post" action="{{ url_for('donors.bulk_export') }}">{{ selection_inputs() }}<button class="btn btn-sm"><i data-lucide="download" class="size-4"></i>Export</button></form>
+  <button class="btn btn-ghost btn-sm btn-circle" @click="clear()" title="Clear selection"><i data-lucide="x" class="size-4"></i></button>
+</div>
+
+{# ---------- dialogs ---------- #}
+<dialog id="dlg-add" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-3 text-lg font-bold">Add a donor</h3>
+  <form method="post" action="{{ url_for('donors.add') }}" class="grid gap-2 sm:grid-cols-2">{{ ui.csrf() }}<input type="hidden" name="qs" :value="qs">
+    <div class="sm:col-span-2">{{ field('name', 'Full name', required=True) }}</div>
+    {{ field('email', 'Email', 'email', required=True) }}{{ field('phone', 'Phone / WhatsApp', required=True) }}
+    {{ field('blood_group', 'Blood group') }}{{ field('sex', 'Sex') }}{{ field('weight', 'Weight (kg)', 'number') }}{{ field('dob', 'Date of birth', 'date') }}
+    <p class="text-xs opacity-60 sm:col-span-2">To let them log in, set a password for them in Users & passwords.</p>
+    <div class="modal-action sm:col-span-2"><button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button><button class="btn btn-primary">Add donor</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="dlg-many" class="modal"><div class="modal-box max-w-6xl" x-data="sheet({{ keys|tojson|forceescape }})">
+  <h3 class="text-lg font-bold">Add many donors</h3>
+  <p class="mb-3 text-sm opacity-70">Type below, or copy rows from Excel / Google Sheets and paste into the first cell. Required: name, email, phone. You'll review and fix any problems before anything is saved.</p>
+  <div class="max-h-[55vh] overflow-auto rounded-box border border-base-300">
+    <table class="table table-xs"><thead class="sticky top-0 bg-base-200"><tr><th>#</th>{% for k in keys %}<th>{{ headers[k] }}</th>{% endfor %}</tr></thead>
+      <tbody><template x-for="(row, r) in rows" :key="r"><tr>
+        <td class="opacity-50" x-text="r + 1"></td>
+        <template x-for="(k, c) in keys" :key="k"><td class="p-0.5"><input class="input input-xs w-full min-w-28" x-model="row[k]" @paste="paste($event, r, c)"></td></template>
+      </tr></template></tbody></table>
+  </div>
+  <form method="post" action="{{ url_for('donors.add_many') }}" class="modal-action items-center">{{ ui.csrf() }}<input type="hidden" name="qs" :value="qs">
+    <input type="hidden" name="rows" :value="json">
+    <button type="button" class="btn btn-ghost btn-sm mr-auto" @click="addRows(10)"><i data-lucide="plus" class="size-4"></i>10 more rows</button>
+    <span class="text-sm opacity-70"><span x-text="filled"></span> filled</span>
+    <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button class="btn btn-primary" :disabled="!filled">Review & add</button>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="dlg-edit" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-3 text-lg font-bold">Edit <span x-text="editing.name"></span></h3>
+  <form method="post" :action="'/admin/donors/' + editing.id + '/edit'" class="grid gap-2 sm:grid-cols-2">{{ ui.csrf() }}
+    <div class="sm:col-span-2">{{ field('name', 'Full name', model='editing.name', required=True) }}</div>
+    {{ field('email', 'Email', 'email', model='editing.email', required=True) }}{{ field('phone', 'Phone / WhatsApp', model='editing.phone', required=True) }}
+    {{ field('blood_group', 'Blood group', model='editing.blood_group') }}{{ field('sex', 'Sex', model='editing.sex') }}
+    {{ field('weight', 'Weight (kg)', 'number', model='editing.weight') }}{{ field('dob', 'Date of birth', 'date', model='editing.dob') }}
+    <div class="modal-action sm:col-span-2"><a class="btn btn-ghost mr-auto" :href="'/admin/donors/' + editing.id">Full profile →</a>
+      <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button><button class="btn btn-primary">Save</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="dlg-bulkedit" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="text-lg font-bold">Edit <span x-text="count.toLocaleString()"></span> donors</h3>
+  <p class="mb-3 text-sm opacity-70">Only the fields you change are updated. Leave a field on “Keep as is” to leave it alone.</p>
+  <form method="post" action="{{ url_for('donors.bulk_edit') }}" class="space-y-2">{{ selection_inputs() }}
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Blood group</legend><select name="blood_group" class="select w-full"><option value="__keep__">Keep as is</option><option value="">Not sure</option>{% for b in groups %}<option>{{ b }}</option>{% endfor %}</select></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Sex</legend><select name="sex" class="select w-full"><option value="__keep__">Keep as is</option><option>Male</option><option>Female</option></select></fieldset>
+    <fieldset class="fieldset py-0"><legend class="fieldset-legend">Role</legend><select name="role" class="select w-full"><option value="__keep__">Keep as is</option><option value="donor">Donor</option><option value="volunteer">Volunteer</option></select></fieldset>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button><button class="btn btn-primary">Apply to <span x-text="count.toLocaleString()"></span></button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="dlg-invite" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="text-lg font-bold">Invite <span x-text="count.toLocaleString()"></span> donors to a drive</h3>
+  <p class="mb-3 text-sm opacity-70">Each donor gets a personal invitation with a “Book my time” link.</p>
+  <form method="post" action="{{ url_for('donors.bulk_invite') }}" class="space-y-3">{{ selection_inputs() }}
+    {% if drives %}<select name="drive_id" required class="select w-full">{% for d in drives %}<option value="{{ d.id }}">{{ d.title }} · {{ d.drive_date|nice_date }}</option>{% endfor %}</select>
+    {{ channel_picks() }}
+    <textarea name="note" rows="2" class="textarea w-full" placeholder="Personal note (optional) — e.g. We're short of O- this month!"></textarea>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button><button class="btn btn-primary"><i data-lucide="send" class="size-4"></i>Send invitations</button></div>
+    {% else %}<p>No upcoming drives. <a class="link" href="{{ url_for('drives.new') }}">Create one first</a>.</p>{% endif %}
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="dlg-message" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="text-lg font-bold">Message <span x-text="count.toLocaleString()"></span> donors</h3>
+  <form method="post" action="{{ url_for('donors.bulk_message') }}" class="mt-3 space-y-3">{{ selection_inputs() }}
+    {{ channel_picks() }}
+    <input name="subject" required class="input w-full" placeholder="Subject (email)">
+    <textarea name="message" required rows="4" class="textarea w-full" placeholder="Your message…"></textarea>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button><button class="btn btn-primary"><i data-lucide="send" class="size-4"></i>Send</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="dlg-segment" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-3 text-lg font-bold">Save this view as a group</h3>
+  <form method="post" action="{{ url_for('donors.save_segment') }}" class="space-y-3">{{ ui.csrf() }}<input type="hidden" name="qs" :value="qs">
+    <input name="name" required maxlength="80" class="input w-full" placeholder="e.g. O- eligible, 3+ donations">
+    <p class="text-xs opacity-60">The group keeps its filters, so it always shows the donors who match today.</p>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button><button class="btn btn-primary">Save group</button></div>
+  </form>
+  {% if segments %}<div class="divider text-xs">Saved groups</div>
+  <ul class="space-y-1">{% for s in segments %}<li class="flex items-center justify-between gap-2"><span>{{ s.name }}</span>
+    <form method="post" action="{{ url_for('donors.delete_segment', i=s.id) }}">{{ ui.csrf() }}<input type="hidden" name="qs" :value="qs"><button class="btn btn-ghost btn-xs text-error">Remove</button></form></li>{% endfor %}</ul>{% endif %}
+</div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+</div>
+{% endblock %}

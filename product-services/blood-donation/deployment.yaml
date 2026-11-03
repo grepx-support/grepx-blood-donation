@@ -1,0 +1,47 @@
+# How blood donation plugs into the generic services (grepx.workspace.yaml `deployment:` points here).
+# Laid over config/common.yaml for every service; generic services never name a product's tables, templates or rules -
+# they read them from here. A new product starts from `scripts/run.sh new-product NAME`.
+# The role ladder for this deployment (grepx_service.Roles): the member role every new account gets, the staff roles, the admin.
+roles:
+  member: donor
+  staff: [volunteer, admin]
+  admin: admin
+# Home-country phone numbers (grepx_service.Phone): calling code, what a local number looks like, an example for messages.
+phone:
+  country: "65"
+  local: "[3689]\\d{7}"
+  example: "9123 4567"
+
+links:            # site pages that messages link to (joined to SITE_URL by grepx_config.deployment.link)
+  home: /
+  events: /#events
+  dashboard: /dashboard
+  event: /drive/{id}
+  certificate: /certificate/{code}
+person:                    # the person record generic services read (name, email, phone); run.sh admin creates one
+  table: people            # people-service; the blood fields ride along through plugins.profile (blood_profile)
+  service: people-service
+  requests: people_requests
+  key: person_id
+messages:         # message role a generic service sends -> this deployment's template key (template-service)
+  event_announcement: drive_announcement
+  event_invitation: drive_invitation
+  event_reminder: drive_reminder
+  booking_moved: slot_changed
+  certificate: certificate
+  referral_joined: referral_joined
+  broadcast: broadcast
+events:
+  checklist_template: blood-drive-playbook   # checklist-service template applied to a new event
+referral:
+  join_points: 1           # a friend signs up
+  convert_points: 2        # that friend converts (here: donates for the first time)
+  conversion:              # the table whose rows mark a converted person (row key = person id)
+    table: donor_stats
+    field: count           # converted when this field > 0
+plugins:          # product rules loaded by generic services (grepx_service.plugins)
+  path: product-services/blood-donation/plugins
+  questionnaire: blood_eligibility     # questionnaire-service: questions, rules, criteria
+  audience: blood_audience             # campaign-service: who is in an audience / matches invite filters
+  event_report: blood_event_stats      # event-report-service: product figures added to the event report
+  profile: blood_profile               # people-service: blood group, sex, weight, date of birth on the person record

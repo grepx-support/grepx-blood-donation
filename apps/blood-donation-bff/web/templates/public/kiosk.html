@@ -1,0 +1,54 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/public.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Check in · {{ d.title }}{% endblock %}
+{% block body %}
+<div class="mx-auto max-w-2xl px-4 py-10">
+  <div class="text-center rise">
+    <span class="mx-auto grid size-16 place-items-center rounded-3xl bg-primary text-primary-content shadow-lg shadow-primary/30"><i data-lucide="droplet" class="size-8 beat"></i></span>
+    <h1 class="mt-4 text-3xl font-extrabold md:text-4xl">Welcome to {{ d.title }}</h1>
+    <p class="mt-2 opacity-70">{{ d.drive_date|nice_date }} · {{ d.venue }}</p>
+  </div>
+
+  {% if current_user.is_authenticated %}
+  <div class="card mt-8 border border-base-300/60 bg-base-100 shadow-xl rise rise-2"><div class="card-body items-center text-center">
+    {% if me and me.status in ('confirmed', 'donated') %}
+      <i data-lucide="badge-check" class="size-12 text-success"></i><h2 class="text-xl font-bold">You're checked in, {{ current_user.first_name }}!</h2>
+      <p class="opacity-70">{% if me.slot_start %}Your time: <b>{{ me.slot_start }}</b>. {% endif %}Please take a seat — we'll call you shortly.</p>
+    {% else %}
+      <h2 class="text-xl font-bold">Hi {{ current_user.first_name }} 👋 Are you here?</h2>
+      <form method="post" action="{{ url_for('kiosk.checkin', i=d.id) }}">{{ ui.csrf() }}<input type="hidden" name="me" value="1">
+        <button class="btn btn-primary btn-lg mt-2"><i data-lucide="log-in" class="size-5"></i>Check me in</button></form>
+    {% endif %}
+  </div></div>
+  <div class="divider my-8 text-sm opacity-60">Checking in someone else?</div>
+  {% endif %}
+
+  <div class="grid gap-5 {{ '' if current_user.is_authenticated else 'mt-8' }}">
+    <div id="found" class="card scroll-mt-24 border border-base-300/60 bg-base-100"><div class="card-body">
+      <h2 class="card-title"><i data-lucide="search" class="size-5 text-primary"></i>Already a donor?</h2>
+      {% if found %}
+        <div class="flex flex-wrap items-center gap-4 rounded-2xl bg-base-200/70 p-4">{{ ui.avatar(found.name, 'w-12', 'bg-primary text-primary-content', found.photo_id) }}
+          <div class="flex-1"><div class="text-lg font-bold">{{ found.name.split()[0] }} {{ found.name.split()[-1][0] if ' ' in found.name }}.</div>
+            <div class="text-sm opacity-60">{{ mask(found.phone) }} · {{ ui.blood(found.blood_group, 'badge-sm') }}</div></div>
+          <form method="post" action="{{ url_for('kiosk.checkin', i=d.id) }}">{{ ui.csrf() }}<button class="btn btn-primary"><i data-lucide="log-in" class="size-4"></i>Check in</button></form></div>
+        <p class="text-xs opacity-60">Not you? Search again below.</p>
+      {% endif %}
+      <form method="post" action="{{ url_for('kiosk.find', i=d.id) }}" class="join w-full">{{ ui.csrf() }}
+        <input name="contact" required class="input join-item flex-1" placeholder="Your phone number or email" inputmode="email" autocomplete="off">
+        <button class="btn btn-primary join-item">Find me</button></form>
+      <p class="text-xs opacity-60">For privacy we only search by your exact phone number or email.</p>
+    </div></div>
+
+    <div id="new" class="card scroll-mt-24 border border-base-300/60 bg-base-100"><div class="card-body">
+      <h2 class="card-title"><i data-lucide="user-plus" class="size-5 text-primary"></i>New here? Register in 10 seconds</h2>
+      {{ ui.quick_register(url_for('kiosk.new', i=d.id), button='Register & check in') }}
+    </div></div>
+  </div>
+</div>
+{% endblock %}

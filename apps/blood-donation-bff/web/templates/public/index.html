@@ -1,0 +1,150 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/public.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import vendor, for_widgets %}
+{% block vendor %}{{ vendor('swiper') }}{{ for_widgets(widgets) }}{% endblock %}
+{% block body %}
+{% if reminder %}
+<div class="mx-auto max-w-7xl px-4 pt-4"><div role="alert" class="alert alert-soft alert-info rise"><i data-lucide="bell-ring" class="size-5"></i>
+  <span><b>Reminder:</b> {{ reminder }}</span><a href="#events" class="btn btn-sm btn-info">Find a drive</a></div></div>
+{% endif %}
+
+{# ───────── HERO ───────── #}
+<section class="relative overflow-hidden bg-mesh">
+  <div class="bg-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+  <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 pt-14 lg:grid-cols-2 lg:pt-24">
+    <div class="rise">
+      <div class="badge badge-soft badge-primary badge-lg mb-6 gap-2"><span class="status status-primary animate-pulse"></span>{{ stats.drives }} upcoming drives in Singapore</div>
+      <h1 class="text-5xl font-extrabold leading-[1.02] tracking-tight md:text-7xl">Your blood.<br><span class="text-gradient">Someone's tomorrow.</span></h1>
+      <p class="mt-6 max-w-xl text-lg opacity-70">Find a blood drive near you, register in seconds, and check if you can donate with our friendly chatbot. One donation can save up to three lives.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a class="btn btn-primary btn-lg shadow-xl shadow-primary/30" href="#events"><i data-lucide="calendar-heart" class="size-5"></i>See upcoming drives</a>
+        <button class="btn btn-lg border-base-300 bg-base-100/60" @click="$dispatch('open-chat')"><i data-lucide="bot" class="size-5"></i>Can I donate?</button>
+      </div>
+      <div class="mt-10 flex flex-wrap items-center gap-3">
+        <span class="text-sm font-semibold opacity-60">Urgently needed</span>
+        {% for g in urgent %}<span class="badge badge-lg gap-1 border-primary/30 bg-primary/10 font-bold text-primary"><i data-lucide="droplet" class="size-3.5"></i>{{ g }}</span>{% endfor %}
+      </div>
+    </div>
+
+    <div class="relative rise rise-2">
+      {% if next_drive %}{% set d = next_drive %}
+      <article class="glass floaty relative z-10 mx-auto max-w-md rounded-[2rem] p-6 shadow-2xl" x-data="countdown('{{ d.drive_date }}')">
+        <div class="drive-img mb-5 h-40 rounded-3xl" {% if d.image_url %}style="--img:url('{{ d.image_url|media }}')"{% endif %}></div>
+        <div class="flex items-center justify-between"><span class="badge badge-primary">Next drive</span><span class="text-sm opacity-60">{{ d.drive_date|nice_date }}</span></div>
+        <h3 class="mt-3 text-2xl font-extrabold">{{ d.title }}</h3>
+        <p class="mt-1 flex items-center gap-1.5 opacity-70"><i data-lucide="map-pin" class="size-4"></i>{{ d.venue }}</p>
+        <div class="mt-5 grid grid-cols-4 gap-2 text-center">
+          {% for unit, label in [('d', 'days'), ('h', 'hours'), ('m', 'mins'), ('s', 'secs')] %}
+          <div class="rounded-2xl bg-base-200/80 py-3"><div class="text-3xl font-extrabold tabular-nums" x-text="pad({{ unit }})">00</div><div class="text-xs opacity-60">{{ label }}</div></div>
+          {% endfor %}
+        </div>
+        <div class="mt-5">{{ ui.fill(d) }}</div>
+        <div class="mt-5 flex flex-wrap gap-2">{{ ui.drive_actions(d) }}<a class="btn btn-ghost btn-sm" href="{{ url_for('public.drive', i=d.id) }}">Details →</a></div>
+      </article>
+      {% else %}
+      <article class="glass floaty relative z-10 mx-auto max-w-md rounded-[2rem] p-8 text-center shadow-2xl">
+        <span class="mx-auto grid size-16 place-items-center rounded-3xl bg-primary/10 text-primary"><i data-lucide="calendar-plus" class="size-8"></i></span>
+        <h3 class="mt-4 text-2xl font-extrabold">New drives coming soon</h3><p class="mt-2 opacity-70">Join as a donor and we'll message you the moment one is announced.</p>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary mt-6">Notify me</a>
+      </article>
+      {% endif %}
+      <div class="glass floaty-slow absolute -left-2 top-6 z-20 hidden items-center gap-2 rounded-2xl px-4 py-3 shadow-xl sm:flex"><i data-lucide="heart-pulse" class="size-5 text-primary"></i><span class="text-sm font-semibold">Saves up to 3 lives</span></div>
+      <div class="glass floaty absolute -right-3 -bottom-6 z-20 hidden items-center gap-2 rounded-2xl px-4 py-3 shadow-xl sm:flex"><i data-lucide="timer" class="size-5 text-accent"></i><span class="text-sm font-semibold">~10 minutes to donate</span></div>
+    </div>
+  </div>
+</section>
+
+{# ───────── STATS ───────── #}
+<section class="relative z-10 mx-auto -mt-10 max-w-6xl px-4">
+  <div class="stats stats-vertical w-full border border-base-300/60 bg-base-100 shadow-xl sm:stats-horizontal">
+    {% for label, n, icon in [('Registered donors', stats.donors, 'users'), ('Donations made', stats.donations, 'droplet'), ('Lives touched', stats.lives, 'heart'), ('Upcoming drives', stats.drives, 'calendar-heart')] %}
+    <div class="stat"><div class="stat-figure text-primary"><i data-lucide="{{ icon }}" class="size-8"></i></div>
+      <div class="stat-title">{{ label }}</div><div class="stat-value tabular-nums" x-data="countUp({{ n }})" x-text="v">{{ n }}</div></div>
+    {% endfor %}
+  </div>
+</section>
+
+{# ───────── EVENTS ───────── #}
+<section id="events" class="mx-auto mt-24 max-w-7xl scroll-mt-24 px-4" x-data="carousel">
+  <div class="mb-8 flex items-end justify-between gap-4">
+    <div><span class="text-sm font-bold uppercase tracking-widest text-primary">Upcoming events</span><h2 class="mt-2 text-3xl font-extrabold md:text-4xl">Pick a drive. Save a life.</h2></div>
+    <div class="flex gap-2"><button x-ref="prev" class="btn btn-circle border-base-300 bg-base-100" aria-label="Previous"><i data-lucide="arrow-left" class="size-5"></i></button>
+      <button x-ref="next" class="btn btn-circle border-base-300 bg-base-100" aria-label="Next"><i data-lucide="arrow-right" class="size-5"></i></button></div>
+  </div>
+  {% if drives %}
+  <div class="swiper overflow-hidden" x-ref="swiper"><div class="swiper-wrapper">
+    {% for d in drives %}
+    <div class="swiper-slide h-auto">
+      <article class="group relative flex h-[26rem] flex-col justify-end overflow-hidden rounded-[2rem] text-white shadow-xl lift" x-data="countdown('{{ d.drive_date }}')">
+        <div class="drive-img absolute inset-0 transition duration-700 group-hover:scale-105" {% if d.image_url %}style="--img:url('{{ d.image_url|media }}')"{% endif %}></div>
+        <div class="absolute inset-0 bg-linear-to-t from-black/85 via-black/30 to-transparent"></div>
+        <div class="absolute left-5 right-5 top-5 flex justify-between">
+          <span class="badge frost" x-text="label"></span>
+          <span class="badge frost gap-1"><i data-lucide="users" class="size-3.5"></i>{{ d.going }} going</span>
+        </div>
+        <div class="relative p-6">
+          <div class="mb-3 inline-flex flex-col items-center rounded-2xl bg-white px-3 py-1.5 text-rose-600 shadow-lg"><b class="text-2xl leading-none">{{ d.drive_date|day }}</b><span class="text-xs font-bold uppercase">{{ d.drive_date|month }}</span></div>
+          <h3 class="text-2xl font-extrabold">{{ d.title }}</h3>
+          <p class="mt-1 flex flex-wrap items-center gap-x-3 text-sm opacity-90"><span class="flex items-center gap-1"><i data-lucide="map-pin" class="size-4"></i>{{ d.venue }}</span><span class="flex items-center gap-1"><i data-lucide="clock" class="size-4"></i>{{ d.time_slot or 'All day' }}</span></p>
+          <div class="mt-4 flex flex-wrap items-center gap-2">{{ ui.drive_actions(d, glass=True) }}<a class="link ml-1 text-sm text-white" href="{{ url_for('public.drive', i=d.id) }}">Details →</a></div>
+        </div>
+      </article>
+    </div>
+    {% endfor %}
+  </div><div x-ref="dots" class="swiper-pagination"></div></div>
+  {% else %}
+  {% call ui.empty('calendar-x', 'No drives scheduled yet', 'Register as a donor and we will notify you by email or WhatsApp as soon as one is announced.') %}<a class="btn btn-primary" href="{{ url_for('auth.register') }}">Get notified</a>{% endcall %}
+  {% endif %}
+</section>
+
+{# ───────── WHO CAN DONATE (numbers from eligibility/criteria.py) ───────── #}
+<section id="eligibility" class="mx-auto mt-24 max-w-7xl scroll-mt-24 px-4">
+  <div class="mb-8 text-center"><span class="text-sm font-bold uppercase tracking-widest text-primary">Basic requirements</span>
+    <h2 class="mt-2 text-3xl font-extrabold md:text-4xl">Can you become a blood donor?</h2>
+    <p class="mx-auto mt-2 max-w-2xl opacity-70">Most healthy people aged {{ elig.AGE_MIN }} to {{ elig.AGE_MAX }} can. Here's what you need, at a glance.</p></div>
+  {% include "partials/_requirements.html" %}
+  <div class="mt-8 flex flex-wrap justify-center gap-3"><button class="btn btn-primary" @click="$dispatch('open-chat')"><i data-lucide="bot" class="size-5"></i>Check me with LifeBot</button>
+    <a class="btn btn-ghost border-base-300" href="{{ url_for('public.eligibility') }}"><i data-lucide="clipboard-check" class="size-5"></i>Use the quick form</a></div>
+</section>
+
+{# ───────── IMPACT (admin decides which widgets are public) ───────── #}
+{% if widgets %}
+<section id="impact" class="mx-auto mt-24 max-w-7xl scroll-mt-24 px-4">
+  <div class="mb-8 text-center"><span class="text-sm font-bold uppercase tracking-widest text-primary">Live impact</span><h2 class="mt-2 text-3xl font-extrabold md:text-4xl">What our community achieves</h2></div>
+  <div class="grid gap-5 lg:grid-cols-3">{% for w in widgets %}{{ ui.widget(w) }}{% endfor %}</div>
+</section>
+{% endif %}
+
+{# ───────── FAQ ───────── #}
+<section id="faq" class="mx-auto mt-24 max-w-3xl scroll-mt-24 px-4">
+  <div class="mb-8 text-center"><span class="text-sm font-bold uppercase tracking-widest text-primary">FAQ</span><h2 class="mt-2 text-3xl font-extrabold md:text-4xl">Good questions</h2></div>
+  <div class="join join-vertical w-full bg-base-100">
+    {% for q, a in [('How long does it take?', 'About 45 minutes in total — the donation itself takes only around 10 minutes.'),
+                    ('Does it hurt?', 'You will feel a quick pinch. Most donors say it is much easier than they expected.'),
+                    ('How often can I donate?', 'Whole blood donors can give again after about 12 weeks. We will remind you when you are eligible.'),
+                    ('What should I do before donating?', 'Sleep well, eat a proper meal 3 hours before, drink plenty of water and bring your ID.'),
+                    ('I travelled recently — can I still donate?', 'It depends on where. Ask LifeBot or the nurse on the day; some areas need a short waiting period.')] %}
+    <div class="collapse collapse-plus join-item border border-base-300/60">
+      <input type="radio" name="faq" {{ 'checked' if loop.first }}><div class="collapse-title font-semibold">{{ q }}</div><div class="collapse-content opacity-75"><p>{{ a }}</p></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{# ───────── CTA ───────── #}
+<section class="mx-auto mt-24 max-w-7xl px-4">
+  <div class="relative overflow-hidden rounded-[2rem] bg-linear-to-br from-rose-600 via-rose-700 to-rose-950 p-10 text-center text-white shadow-2xl md:p-16">
+    <div class="bg-grid absolute inset-0 opacity-30"></div>
+    <div class="relative"><h2 class="text-3xl font-extrabold md:text-5xl">Be someone's hero this month</h2>
+      <p class="mx-auto mt-4 max-w-xl opacity-90">Create your donor account in under a minute. We'll remind you when you're eligible and send you drives near you.</p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3"><a href="{{ url_for('auth.register') }}" class="btn btn-lg border-0 bg-white text-rose-700 hover:bg-rose-50">Become a donor</a>
+        <a href="https://wa.me/{{ wa_number }}" target="_blank" rel="noopener" class="btn btn-lg frost"><i data-lucide="message-circle" class="size-5"></i>WhatsApp us</a></div></div>
+  </div>
+</section>
+{% endblock %}

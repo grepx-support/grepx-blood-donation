@@ -1,0 +1,26 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% import "partials/_ui.html" as ui with context %}
+<aside class="flex min-h-full w-72 flex-col border-r border-base-300/60 bg-base-100">
+  <div class="px-6 py-5">{{ ui.brand() }}</div>
+  <ul class="menu w-full flex-1 gap-1 px-3">
+    <li class="menu-title text-xs uppercase tracking-wider">Workspace</li>
+    {% for m in menu %}
+    <li><a href="{{ url_for(m.endpoint) }}" class="rounded-xl py-2.5 {{ 'menu-active' if m.is_active(request.endpoint) }}">
+      <i data-lucide="{{ m.icon }}" class="size-5"></i>{{ m.label }}</a></li>
+    {% endfor %}
+    <li class="menu-title mt-4 text-xs uppercase tracking-wider">Personal</li>
+    <li><a href="{{ url_for('donor.dashboard') }}" class="rounded-xl py-2.5"><i data-lucide="heart" class="size-5"></i>My donor profile</a></li>
+  </ul>
+  <div class="m-3 rounded-box bg-base-200 p-3">
+    <div class="flex items-center gap-3">{{ ui.avatar(current_user.name, 'w-10', 'bg-primary text-primary-content', current_user.photo_id) }}
+      <div class="min-w-0 flex-1"><div class="truncate font-semibold">{{ current_user.name }}</div>
+        <span class="badge badge-sm {{ 'badge-primary' if current_user.is_admin else 'badge-secondary' }} capitalize">{{ current_user.role }}</span></div>
+      <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost btn-sm btn-circle" title="Log out"><i data-lucide="log-out" class="size-4"></i></a>
+    </div>
+  </div>
+</aside>

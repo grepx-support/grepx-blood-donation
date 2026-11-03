@@ -1,0 +1,13 @@
+# What scripts/infra.sh installs and starts. Run order: scripts/infra.sh → scripts/setup.sh → scripts/run.sh start
+# Databases are NOT listed per service here: infra.sh reads every service's resolved database URL
+# (config/common.yaml ← config/projects/<project>.yaml ← service config.yaml) and starts only the engines in use.
+toolchain:
+  python: true        # Python 3.10+ (required)
+  git: true
+  docker: auto        # auto = only if a database runs in docker or monitoring is on
+  flutter: false      # true to install Flutter for apps/mobile (Android/iOS builds)
+databases:
+  mode: docker        # docker = run engines as local containers | external = you run them; infra.sh only checks they answer
+  postgres: { image: "postgres:16", port: 5432, user: grepx, password: grepx }
+  mongo: { image: "mongo:7", port: 27017 }
+monitoring: false     # true = also start Prometheus + Loki + Grafana (observability/)

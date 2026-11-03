@@ -1,0 +1,24 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/base.html" %}
+{% block shell %}
+<div class="drawer lg:drawer-open">
+  <input id="side" type="checkbox" class="drawer-toggle">
+  <div class="drawer-content flex min-h-screen flex-col">
+    {% include "partials/_topbar.html" %}
+    <main class="mx-auto w-full max-w-7xl flex-1 p-4 md:p-8">{% block body %}{% endblock %}</main>
+    <footer class="border-t border-base-300/60 px-4 py-4 text-center text-xs opacity-60 md:px-8 print:block">
+      © {{ year }} <a class="link link-hover font-semibold" href="{{ company_url }}" target="_blank" rel="noopener">{{ company }}</a> ·
+      <a class="link link-hover" href="{{ company_url }}" target="_blank" rel="noopener">{{ company_url|replace('https://', '')|replace('http://', '')|trim('/') }}</a> · All rights reserved ·
+      Designed &amp; developed by <a class="link link-hover" href="{{ company_url }}" target="_blank" rel="noopener">{{ company }}</a></footer>
+  </div>
+  <div class="drawer-side z-50">
+    <label for="side" class="drawer-overlay" aria-label="Close menu"></label>
+    {% include "partials/_sidebar.html" %}
+  </div>
+</div>
+{% endblock %}

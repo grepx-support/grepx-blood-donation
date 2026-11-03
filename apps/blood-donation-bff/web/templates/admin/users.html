@@ -1,0 +1,95 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% block title %}Users & passwords · {{ org }}{% endblock %}
+{% macro role_select(name, value, disabled=False) %}
+<select name="{{ name }}" class="select w-full" {{ 'disabled' if disabled }}>{% for r in roles %}<option value="{{ r }}" {{ 'selected' if r == value }}>{{ r|capitalize }}</option>{% endfor %}</select>
+{% endmacro %}
+{% macro password_field(label='Password') %}
+<fieldset class="fieldset" x-data="{ show: false, pw: '' }"><legend class="fieldset-legend">{{ label }} <span class="badge badge-ghost badge-xs">empty = generate one</span></legend>
+  <label class="input w-full"><i data-lucide="key-round" class="size-4 opacity-50"></i>
+    <input :type="show ? 'text' : 'password'" name="password" x-model="pw" minlength="8" class="grow" placeholder="At least 8 characters" autocomplete="new-password">
+    <button type="button" class="btn btn-ghost btn-xs" @click="pw = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8).toUpperCase(); show = true">Generate</button>
+    <button type="button" class="btn btn-ghost btn-xs" @click="show = !show" x-text="show ? 'Hide' : 'Show'">Show</button></label></fieldset>
+{% endmacro %}
+{% block body %}
+<div x-data="{ u: {} }">
+{% call ui.page_head('Users & passwords', 'Create logins for donors, volunteers and admins, change their details and reset passwords. The email is the login name.', 'key-round') %}
+  <button class="btn btn-primary" onclick="newuser.showModal()"><i data-lucide="user-plus" class="size-4"></i>New user</button>
+{% endcall %}
+
+<form class="mb-5 flex flex-wrap gap-2">
+  <label class="input w-full max-w-md"><i data-lucide="search" class="size-4 opacity-50"></i><input name="q" value="{{ q }}" placeholder="Search name, email or phone…" class="grow"></label>
+  <div class="join">
+    {% for r, label in [('', 'All'), ('donor', 'Donors'), ('volunteer', 'Volunteers'), ('admin', 'Admins')] %}
+    <button name="role" value="{{ r }}" class="join-item btn btn-sm {{ 'btn-primary' if role == r else '' }}">{{ label }}</button>{% endfor %}
+  </div>
+</form>
+
+<div class="card border border-base-300/60 bg-base-100"><div class="overflow-x-auto">
+  <table class="table">
+    <thead><tr><th>Person</th><th>Login (email)</th><th>Phone</th><th>Role</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for x in users %}{% set masked = 'no-email.local' in x.email %}
+      <tr class="hover">
+        <td><div class="flex items-center gap-3">{{ ui.avatar(x.name, 'w-9', photo=x.photo_id) }}<span class="font-semibold">{{ x.name }}</span></div></td>
+        <td>{% if masked %}<span class="badge badge-soft badge-warning">no email yet</span>{% else %}{{ x.email }}{% endif %}</td>
+        <td class="whitespace-nowrap">{{ x.phone|phone }}</td>
+        <td><span class="badge {{ {'admin': 'badge-primary', 'volunteer': 'badge-secondary'}.get(x.role, 'badge-ghost') }} capitalize">{{ x.role }}</span></td>
+        <td class="whitespace-nowrap text-right">
+          <button class="btn btn-ghost btn-sm" x-on:click="u = {{ {'id': x.id, 'name': x.name, 'email': '' if masked else x.email, 'phone': x.phone, 'role': x.role}|tojson|forceescape }}; edituser.showModal()"><i data-lucide="pencil" class="size-4"></i>Edit</button>
+          <button class="btn btn-ghost btn-sm" x-on:click="u = {{ {'id': x.id, 'name': x.name, 'email': x.email}|tojson|forceescape }}; resetpw.showModal()"><i data-lucide="key-round" class="size-4"></i>Password</button>
+        </td>
+      </tr>
+    {% else %}<tr><td colspan="5">{% call ui.empty('user-search', 'No users found', 'Try another search or create a new user.') %}{% endcall %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+<dialog id="newuser" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-4 text-lg font-bold">New user</h3>
+  <form method="post" action="{{ url_for('users.create', q=q, role=role) }}" class="space-y-2">{{ ui.csrf() }}
+    <fieldset class="fieldset"><legend class="fieldset-legend">Full name</legend><input name="name" {{ rules('name') }} required class="input w-full"></fieldset>
+    <fieldset class="fieldset"><legend class="fieldset-legend">Email (login name)</legend><input type="email" name="email" required class="input w-full"></fieldset>
+    <div class="grid grid-cols-2 gap-3">
+      <fieldset class="fieldset"><legend class="fieldset-legend">Phone / WhatsApp</legend><input name="phone" {{ rules('phone') }} class="input w-full"></fieldset>
+      <fieldset class="fieldset"><legend class="fieldset-legend">Role</legend>{{ role_select('role', 'donor') }}</fieldset>
+    </div>
+    {{ password_field() }}
+    <p class="text-xs opacity-60">Volunteers start with no functions — give them a role in Volunteers & admins.</p>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="newuser.close()">Cancel</button><button class="btn btn-primary">Create user</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="edituser" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-4 text-lg font-bold">Edit <span x-text="u.name"></span></h3>
+  <form method="post" :action="'/admin/users/' + u.id + '?q={{ q }}&role={{ role }}'" class="space-y-2">{{ ui.csrf() }}
+    <fieldset class="fieldset"><legend class="fieldset-legend">Full name</legend><input name="name" x-model="u.name" {{ rules('name') }} required class="input w-full"></fieldset>
+    <fieldset class="fieldset"><legend class="fieldset-legend">Email (login name)</legend><input type="email" name="email" x-model="u.email" required class="input w-full"></fieldset>
+    <div class="grid grid-cols-2 gap-3">
+      <fieldset class="fieldset"><legend class="fieldset-legend">Phone / WhatsApp</legend><input name="phone" x-model="u.phone" {{ rules('phone') }} class="input w-full"></fieldset>
+      <fieldset class="fieldset"><legend class="fieldset-legend">Role</legend>
+        <select name="role" x-model="u.role" class="select w-full" :disabled="u.id === {{ current_user.id|tojson|forceescape }}">{% for r in roles %}<option value="{{ r }}">{{ r|capitalize }}</option>{% endfor %}</select></fieldset>
+    </div>
+    <p class="text-xs opacity-60" x-show="u.id === {{ current_user.id|tojson|forceescape }}">You can't change your own role.</p>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="edituser.close()">Cancel</button><button class="btn btn-primary">Save</button></div>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+
+<dialog id="resetpw" class="modal modal-bottom sm:modal-middle"><div class="modal-box">
+  <h3 class="mb-1 text-lg font-bold">Reset password</h3><p class="mb-4 text-sm opacity-60" x-text="u.name + ' · ' + u.email"></p>
+  <form method="post" :action="'/admin/users/' + u.id + '/password?q={{ q }}&role={{ role }}'" class="space-y-2">{{ ui.csrf() }}
+    {{ password_field('New password') }}
+    <p class="text-xs opacity-60">The new password is shown once after saving — share it privately. They can change it any time in My details.</p>
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="resetpw.close()">Cancel</button><button class="btn btn-warning">Reset password</button></div>
+  </form>
+  <div class="divider text-xs opacity-60">or let them choose it</div>
+  <form method="post" :action="'/admin/users/' + u.id + '/send-reset'">{{ ui.csrf() }}
+    <button class="btn btn-ghost btn-block border-base-300"><i data-lucide="mail" class="size-4"></i>Email them a reset link</button>
+    <p class="mt-1 text-center text-xs opacity-60">They get a one-time link (valid 1 hour) to choose their own password.</p>
+  </form></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+</div>
+{% endblock %}

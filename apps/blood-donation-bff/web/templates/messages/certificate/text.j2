@@ -1,0 +1,10 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+🏅 {{ org }}: Thank you {{ r.first_name }}! Your donation{% if drive %} at {{ drive.title }}{% endif %} can save up to 3 lives. Your certificate:
+{{ site }}/certificate/{{ cert.id }}{% if voucher %}
+
+🎁 {{ voucher.title }}{% if voucher.partner %} ({{ voucher.partner }}){% endif %}{% if voucher.code %} – code {{ voucher.code }}{% endif %}{% if voucher.expires_on %}, valid until {{ voucher.expires_on|nice_date }}{% endif %}{% endif %}

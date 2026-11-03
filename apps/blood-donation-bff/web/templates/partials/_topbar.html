@@ -1,0 +1,19 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% import "partials/_ui.html" as ui with context %}
+<header class="sticky top-0 z-30 border-b border-base-300/50 bg-base-100/75 backdrop-blur-xl">
+  <div class="navbar gap-2 px-4 md:px-8">
+    <label for="side" class="btn btn-ghost btn-circle lg:hidden" aria-label="Open menu"><i data-lucide="panel-left" class="size-5"></i></label>
+    <button class="btn btn-ghost flex-1 justify-start gap-3 border-base-300 font-normal opacity-70 md:max-w-md" @click="$dispatch('open-palette')">
+      <i data-lucide="search" class="size-4"></i><span>Jump to…</span><kbd class="kbd kbd-xs ml-auto hidden sm:inline">Ctrl K</kbd></button>
+    <div class="ml-auto flex items-center gap-1">
+      <a href="{{ url_for('tasks.index') }}" class="btn btn-ghost btn-circle" title="My tasks"><i data-lucide="list-todo" class="size-5"></i></a>
+      <a href="{{ url_for('public.index') }}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm gap-1.5" title="Open the website in a new tab"><i data-lucide="globe" class="size-5"></i><span class="hidden md:inline">Website</span><i data-lucide="external-link" class="size-3 opacity-60"></i></a>
+      {{ ui.theme_toggle() }}
+    </div>
+  </div>
+</header>

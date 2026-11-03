@@ -1,0 +1,11 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+Subject: 🩸 New blood drive: {{ drive.title }} on {{ drive.drive_date|nice_date }}
+<h2 style="margin:0 0 8px">Hi {{ r.first_name }}, we need you!</h2>
+<p><b>{{ drive.title }}</b><br>📅 {{ drive.drive_date|nice_date }} · 🕒 {{ drive.time_slot or 'All day' }}<br>📍 {{ drive.venue }}</p>
+<p>{{ drive.description or 'Every donation saves up to three lives.' }}</p>
+<p><a href="{{ site }}/drive/{{ drive.id }}" style="display:inline-block;background:#e11d48;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700">Register now</a></p>

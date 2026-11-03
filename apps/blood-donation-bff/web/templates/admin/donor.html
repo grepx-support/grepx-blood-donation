@@ -1,0 +1,77 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_photo.html" import photo_editor with context %}
+{% from "partials/_access_form.html" import access_form with context %}
+{% block title %}{{ d.name }} · {{ org }}<dialog id="editdonor" class="modal modal-bottom sm:modal-middle"><div class="modal-box max-w-xl">
+  <h3 class="mb-4 text-lg font-bold">Edit donor</h3>
+  <form method="post" action="{{ url_for('donors.edit', i=d.id) }}" class="space-y-3">{{ ui.csrf() }}{% set u = d %}{% set email_optional = true %}{% include "partials/_donor_fields.html" %}
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="editdonor.close()">Cancel</button><button class="btn btn-primary">Save</button></div></form>
+</div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+{% endblock %}
+{% block body %}
+<a href="{{ url_for('donors.index') }}" class="btn btn-ghost btn-sm mb-4"><i data-lucide="arrow-left" class="size-4"></i>Donors</a>
+<div class="grid gap-5 lg:grid-cols-3">
+  <div class="card border border-base-300/60 bg-base-100 lg:col-span-3 rise"><div class="card-body flex-row flex-wrap items-center gap-5">
+    {% if current_user.can('manage_donors') %}{{ photo_editor(d, url_for('donors.photo', i=d.id), url_for('donors.photo_remove', i=d.id), 'w-20 text-2xl') }}
+    {% else %}{{ ui.avatar(d.name, 'w-20 text-2xl', 'bg-primary text-primary-content', d.photo_id) }}{% endif %}
+    <div class="flex-1"><h1 class="flex flex-wrap items-center gap-3 text-2xl font-extrabold">{{ d.name }} {{ ui.blood(d.blood_group, 'badge-lg') }}
+        <span class="badge {{ {'admin': 'badge-primary', 'volunteer': 'badge-secondary'}.get(d.role, 'badge-ghost') }} capitalize">{{ d.role }}{{ ' · ' ~ role_name if d.role == 'volunteer' and role_name }}</span></h1>
+      <p class="opacity-60">{{ d.sex or '—' }} · {{ d.weight or '—' }} kg · born {{ d.dob or '—' }} · ID BC-{{ d.id|card_no }}</p></div>
+    <div class="flex flex-wrap gap-2">
+      <a href="mailto:{{ d.email }}" class="btn btn-ghost border-base-300 btn-sm"><i data-lucide="mail" class="size-4"></i>Email</a>
+      <a href="tel:{{ d.phone }}" class="btn btn-ghost border-base-300 btn-sm"><i data-lucide="phone" class="size-4"></i>Call</a>
+      {% if current_user.is_admin and '@no-email.local' not in d.email %}<form method="post" action="{{ url_for('users.send_reset', i=d.id) }}" onsubmit="return confirm('Email {{ d.name }} a password reset link?')">{{ ui.csrf() }}
+        <button class="btn btn-ghost border-base-300 btn-sm"><i data-lucide="key-round" class="size-4"></i>Send password reset</button></form>{% endif %}
+      <a href="{{ d.phone|wa }}" target="_blank" class="btn btn-success btn-soft btn-sm"><i data-lucide="message-circle" class="size-4"></i>WhatsApp</a>
+      <button class="btn btn-primary btn-sm" onclick="editdonor.showModal()"><i data-lucide="pencil" class="size-4"></i>Edit</button>
+      {% if current_user.is_admin %}<a class="btn btn-ghost btn-sm border-base-300" href="{{ url_for('users.index', q=d.email) }}"><i data-lucide="key-round" class="size-4"></i>Login & password</a>{% endif %}</div>
+  </div></div>
+
+  <div class="stats stats-vertical border border-base-300/60 bg-base-100 sm:stats-horizontal lg:col-span-3">
+    <div class="stat"><div class="stat-title">Donations</div><div class="stat-value text-primary">{{ d.total }}</div></div>
+    <div class="stat"><div class="stat-title">Lives touched</div><div class="stat-value">{{ d.total * 3 }}</div></div>
+    <div class="stat"><div class="stat-title">Last donation</div><div class="stat-value text-2xl">{{ d.last_donation|nice_date if d.last_donation else '—' }}</div></div>
+    <div class="stat"><div class="stat-title">Eligibility</div><div class="stat-value text-2xl {{ 'text-success' if status.ready else 'text-warning' }}">{{ 'Eligible now' if status.ready else 'In ' ~ status.days_left ~ ' days' }}</div></div>
+  </div>
+
+  <div class="card border border-base-300/60 bg-base-100 lg:col-span-2"><div class="card-body">
+    <h3 class="card-title text-base"><i data-lucide="history" class="size-5 text-primary"></i>Donation history</h3>
+    {% if history %}<ol class="relative ml-3 border-l-2 border-primary/30">{% for h in history %}
+        <li class="mb-6 ml-6 last:mb-0"><span class="absolute -left-[13px] grid size-6 place-items-center rounded-full bg-primary text-primary-content ring-4 ring-base-100"><i data-lucide="droplet" class="size-3.5"></i></span>
+          <time class="text-sm opacity-60">{{ h.donated_on|nice_date }}</time><div class="font-semibold">{{ h.title or 'Walk-in / other' }}</div></li>{% endfor %}</ol>
+    {% else %}{% call ui.empty('droplet', 'No donations yet', 'Record the first one using the form.') %}{% endcall %}{% endif %}
+  </div></div>
+
+  <div class="space-y-5">
+    <form method="post" action="{{ url_for('donors.add_donation', i=d.id) }}" class="card border border-base-300/60 bg-base-100">{{ ui.csrf() }}<div class="card-body gap-3">
+      <h3 class="card-title text-base"><i data-lucide="circle-plus" class="size-5 text-primary"></i>Record donation</h3>
+      <fieldset class="fieldset"><legend class="fieldset-legend">Date</legend><input type="date" name="donated_on" value="{{ today }}" required class="input w-full"></fieldset>
+      <fieldset class="fieldset"><legend class="fieldset-legend">Drive</legend><select name="drive_id" class="select w-full"><option value="">— Walk-in / other —</option>
+        {% for x in drives %}<option value="{{ x.id }}">{{ x.title }} ({{ x.drive_date }})</option>{% endfor %}</select></fieldset>
+      <button class="btn btn-primary"><i data-lucide="save" class="size-4"></i>Save & send thank-you</button></div></form>
+    {% if current_user.is_admin %}
+    <form method="post" action="{{ url_for('staff.save', i=d.id) }}" class="card border border-secondary/40 bg-base-100">{{ ui.csrf() }}<div class="card-body gap-3">
+      <h3 class="card-title text-base"><i data-lucide="shield-check" class="size-5 text-secondary"></i>Access</h3>
+      {{ access_form(access_user, '', next=url_for('donors.profile', i=d.id)) }}
+      <div class="flex justify-between"><a class="link text-xs opacity-70" href="{{ url_for('staff.index') }}#roles">Edit volunteer roles</a>
+        <button class="btn btn-secondary btn-sm">Save access</button></div>
+    </div></form>
+    {% endif %}
+    <div class="card border border-base-300/60 bg-base-100"><div class="card-body">
+      <h3 class="card-title text-base"><i data-lucide="calendar-check" class="size-5 text-primary"></i>Registered drives</h3>
+      {% for u in upcoming %}<div class="flex items-center justify-between gap-2 py-1"><span class="truncate">{{ u.title }}</span>{{ ui.status_badge(u.status) }}</div>
+      {% else %}<p class="text-sm opacity-60">None upcoming.</p>{% endfor %}</div></div>
+  </div>
+</div>
+<dialog id="editdonor" class="modal modal-bottom sm:modal-middle"><div class="modal-box max-w-xl">
+  <h3 class="mb-4 text-lg font-bold">Edit donor</h3>
+  <form method="post" action="{{ url_for('donors.edit', i=d.id) }}" class="space-y-3">{{ ui.csrf() }}{% set u = d %}{% set email_optional = true %}{% include "partials/_donor_fields.html" %}
+    <div class="modal-action"><button type="button" class="btn btn-ghost" onclick="editdonor.close()">Cancel</button><button class="btn btn-primary">Save</button></div></form>
+</div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+{% endblock %}

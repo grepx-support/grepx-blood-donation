@@ -1,0 +1,61 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% extends "layouts/app.html" %}
+{% import "partials/_ui.html" as ui with context %}
+{% from "partials/_vendor.html" import vendor %}
+{% block title %}Workspace · {{ org }}{% endblock %}
+{% block vendor %}{{ vendor('apex') }}{% endblock %}
+{% block body %}
+<div class="mb-8 rise" x-data="{ h: new Date().getHours() }">
+  <p class="text-sm font-semibold opacity-60" x-text="new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })"></p>
+  <h1 class="text-3xl font-extrabold tracking-tight md:text-4xl"><span x-text="h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'">Hello</span>, {{ current_user.first_name }} 👋</h1>
+  <p class="mt-1 opacity-60">{% if overdue %}<span class="font-semibold text-error">{{ overdue }} overdue task{{ 's' if overdue > 1 }}</span> · {% endif %}{{ tasks|length }} open task{{ 's' if tasks|length != 1 }} · {{ drives|length }} upcoming drive{{ 's' if drives|length != 1 }}</p>
+</div>
+
+<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+  {% for label, v, icon, tone in [('Donors', stats.donors, 'users', 'primary'), ('Donations', stats.donations, 'droplet', 'error'), ('Lives touched', stats.lives, 'heart', 'secondary'), ('Upcoming drives', stats.drives, 'calendar-heart', 'accent')] %}
+  <div class="card border border-base-300/60 bg-base-100 lift rise"><div class="card-body p-5">
+    <span class="grid size-11 place-items-center rounded-2xl bg-{{ tone }}/10 text-{{ tone }}"><i data-lucide="{{ icon }}" class="size-6"></i></span>
+    <div class="mt-3 text-3xl font-extrabold tabular-nums" x-data="countUp({{ v }})" x-text="v">{{ v }}</div><div class="text-sm opacity-60">{{ label }}</div>
+  </div></div>
+  {% endfor %}
+</div>
+
+<div class="mt-6 grid gap-5 lg:grid-cols-3">
+  <div class="card border border-base-300/60 bg-base-100 lg:col-span-2"><div class="card-body">
+    <div class="flex items-center justify-between"><h3 class="card-title text-base"><i data-lucide="list-todo" class="size-5 text-primary"></i>My tasks</h3>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('tasks.index') }}">Open planner →</a></div>
+    {% for t in tasks %}
+    <a href="{{ url_for('tasks.index') }}" class="flex items-center gap-3 rounded-2xl p-3 hover:bg-base-200/60">
+      <span class="grid size-9 place-items-center rounded-xl {{ 'bg-error/10 text-error' if t.important else 'bg-base-200' }}"><i data-lucide="{{ 'flame' if t.important else 'circle-dashed' }}" class="size-5"></i></span>
+      <div class="min-w-0 flex-1"><div class="truncate font-semibold">{{ t.title }}</div><div class="text-xs opacity-60">{{ t.drive_title or 'General' }}</div></div>
+      {% if t.due_at %}<span class="badge badge-soft {{ 'badge-error' if t.due_at < now else 'badge-ghost' }} gap-1"><i data-lucide="clock" class="size-3"></i>{{ t.due_at|replace('T', ' ') }}</span>{% endif %}
+      {{ ui.status_badge(t.status) }}</a>
+    {% else %}{% call ui.empty('party-popper', 'All clear!', 'No open tasks assigned to you.') %}<a href="{{ url_for('tasks.index') }}" class="btn btn-primary btn-sm">Plan something</a>{% endcall %}{% endfor %}
+  </div></div>
+
+  <div class="card border border-base-300/60 bg-base-100"><div class="card-body">
+    <h3 class="card-title text-base"><i data-lucide="calendar-heart" class="size-5 text-primary"></i>Upcoming drives</h3>
+    {% for d in drives %}
+    <a href="{{ url_for('drives.manage', i=d.id) if current_user.can('manage_drives') else url_for('public.drive', i=d.id) }}" class="block rounded-2xl p-3 hover:bg-base-200/60">
+      <div class="flex justify-between gap-2"><span class="truncate font-semibold">{{ d.title }}</span><span class="text-xs opacity-60">{{ d.drive_date|nice_date }}</span></div>
+      <div class="mt-2">{{ ui.fill(d) }}</div></a>
+    {% else %}<p class="text-sm opacity-60">No upcoming drives.</p>{% endfor %}
+  </div></div>
+
+  {% for w in charts %}{{ ui.widget(w) }}{% endfor %}
+</div>
+
+<h3 class="mb-3 mt-8 text-sm font-bold uppercase tracking-wider opacity-60">Quick actions</h3>
+<div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+  {% for perm, ep, icon, label in [('manage_drives', 'drives.new', 'calendar-plus', 'New drive'), ('checkin', 'checkin.index', 'scan-line', 'Check-in desk'), ('manage_donors', 'donors.index', 'users', 'Donors'), ('bulk_import', 'imports.index', 'file-spreadsheet', 'Import Excel'), ('notify', 'messages.index', 'megaphone', 'Broadcast'), (None, 'tasks.index', 'square-kanban', 'Planner'), (None, 'analytics.index', 'chart-pie', 'Analytics')] %}
+  {% if perm is none or current_user.can(perm) %}
+  <a href="{{ url_for(ep) }}" class="card border border-base-300/60 bg-base-100 lift"><div class="card-body flex-row items-center gap-3 p-4">
+    <span class="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><i data-lucide="{{ icon }}" class="size-5"></i></span><span class="font-semibold">{{ label }}</span></div></a>
+  {% endif %}{% endfor %}
+</div>
+{% endblock %}

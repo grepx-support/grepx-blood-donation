@@ -1,0 +1,21 @@
+# What this deployment runs - one product on the shared platform - with the versions it is pinned to.
+# This repo is the workspace: ./workspace.sh links the other repos in (platform/, scripts/, observability/, infra/ from
+# grepx-platform; common-services/ from grepx-services; the Nexus binary from grepx-nexus-cpp).
+# `scripts/run.sh workspace` checks the folders match; `scripts/run.sh workspace pin` records the Nexus binary checksum.
+product: blood-donation
+deployment: product-services/blood-donation/deployment.yaml     # how the product plugs into the generic services
+
+platform:                     # repo grepx-platform (../grepx-platform): libraries, contracts generator, tools, scripts
+  version: 0.1.0
+  libs: platform/libs
+  tools: platform/tools
+nexus:                        # repo grepx-nexus-cpp (../grepx-nexus-cpp): the hub
+  version: 0.1.0
+  binary: platform/nexus-server/bin/nexus_server
+  sha256: ""                  # empty = not pinned yet (scripts/run.sh workspace pin)
+services:                     # repo grepx-services (../grepx-services): the generic services, released together
+  version: 0.1.0
+  path: common-services
+product_repo:                 # this repo, grepx-blood-donation: everything only this product needs
+  services: product-services/blood-donation
+  apps: [apps/blood-donation-bff, apps/web]   # apps/web is the shared web shell; it moves to its own repo when a 2nd product ships

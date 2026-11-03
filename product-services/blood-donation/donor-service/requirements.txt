@@ -1,0 +1,10 @@
+# product-services/blood-donation/donor-service - library lines are written by scripts/run.sh deps
+-e ../../../platform/libs/grepx-contracts
+-e ../../../platform/libs/grepx-config
+-e ../../../platform/libs/nexus-client
+-e ../../../platform/libs/grepx-store
+-e ../../../platform/libs/grepx-port-provider
+-e ../../../platform/libs/grepx-web-bootstrap
+-e ../../../platform/libs/nexus-logging
+-e ../../../platform/libs/grepx-service
+pyyaml>=6

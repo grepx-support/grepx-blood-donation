@@ -1,0 +1,25 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% import "partials/_ui.html" as ui with context %}
+<div x-data="{ id: null, title: '' }" @interest.window="id = $event.detail.id; title = $event.detail.title; $refs.dlg.showModal()">
+  <dialog x-ref="dlg" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+      <div class="mb-5 flex items-center gap-3">
+        <span class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><i data-lucide="hand-heart" class="size-6"></i></span>
+        <div><h3 class="text-lg font-bold">I'm interested</h3><p class="text-sm opacity-60" x-text="title"></p></div>
+      </div>
+      <form method="post" :action="'/drive/' + id + '/interest'" class="space-y-3">{{ ui.csrf() }}
+        <label class="floating-label"><span>Full name</span><input name="name" {{ rules('name') }} required class="input w-full" placeholder="Full name" value="{{ current_user.name if current_user.is_authenticated }}"></label>
+        <label class="floating-label"><span>Phone / WhatsApp</span><input name="phone" {{ rules('phone') }} required class="input w-full" value="{{ current_user.phone|phone if current_user.is_authenticated }}"></label>
+        <label class="floating-label"><span>Email</span><input name="email" {{ rules('email') }} required class="input w-full" placeholder="Email" value="{{ current_user.email if current_user.is_authenticated }}"></label>
+        <p class="text-xs opacity-60">We'll send you drive updates by email & WhatsApp. No spam, ever.</p>
+        <div class="modal-action"><button type="button" class="btn btn-ghost" @click="$refs.dlg.close()">Cancel</button><button class="btn btn-primary">Count me in</button></div>
+      </form>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  </dialog>
+</div>

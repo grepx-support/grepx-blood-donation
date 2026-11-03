@@ -1,0 +1,26 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+<div x-data="palette" @keydown.ctrl.k.window.prevent="toggle()" @keydown.meta.k.window.prevent="toggle()" @open-palette.window="show()" @keydown.escape.window="close()">
+  <div class="modal modal-top sm:modal-middle" :class="open && 'modal-open'" role="dialog" aria-label="Command palette">
+    <div class="modal-box mt-16 max-w-xl p-0 sm:mt-0">
+      <label class="input input-lg w-full rounded-none border-0 border-b border-base-300 shadow-none outline-none">
+        <i data-lucide="search" class="size-5 opacity-50"></i>
+        <input x-ref="q" x-model="q" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" @keydown.enter.prevent="go()" class="grow" placeholder="Search pages, drives, actions…">
+        <kbd class="kbd kbd-sm">esc</kbd>
+      </label>
+      <ul class="menu max-h-96 w-full flex-nowrap overflow-y-auto p-2">
+        <template x-for="(it, idx) in results" :key="it.url + idx">
+          <li><a :href="it.url" :class="idx === active && 'menu-active'" @mouseenter="active = idx">
+            <span class="badge badge-ghost badge-sm w-28 justify-start truncate" x-text="it.group"></span>
+            <span class="flex-1 truncate" x-text="it.label"></span><span class="text-xs opacity-50" x-text="it.hint || ''"></span></a></li>
+        </template>
+        <li x-show="!results.length" class="p-6 text-center opacity-60">No matches</li>
+      </ul>
+    </div>
+    <div class="modal-backdrop" @click="close()"></div>
+  </div>
+</div>

@@ -1,0 +1,7 @@
+{
+  "name": "LifeFlow Blood Camp",
+  "logo": "🩸",
+  "tagline": "Your blood. Someone's tomorrow.",
+  "theme": { "primary": "#e11d48", "primary-ink": "#ffffff" },
+  "modules": ["blood/public", "blood/donor", "blood/staff", "core/auth", "core/tasks", "core/messages", "core/admin"]
+}

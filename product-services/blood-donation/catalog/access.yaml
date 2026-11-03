@@ -1,0 +1,15 @@
+# Permissions this product's staff screens check, and the default volunteer roles.
+permissions:
+  manage_drives: Create, edit, clone and complete drives
+  checkin: Check-in desk, walk-ins and QR scanning
+  notify: Send messages and invitations
+  manage_donors: Donor list, editing and exports
+  bulk_import: Excel import
+  view_log: Message delivery log
+  manage_tasks: Planning board for everyone's tasks
+  reports: Drive reports and retrospectives
+roles:
+  - {role_id: checkin-desk, name: Check-in desk, perms: [checkin]}
+  - {role_id: drive-coordinator, name: Drive coordinator, perms: [manage_drives, checkin, manage_tasks, reports]}
+  - {role_id: donor-relations, name: Donor relations, perms: [manage_donors, notify, view_log]}
+  - {role_id: data-entry, name: Data entry, perms: [manage_donors, bulk_import]}

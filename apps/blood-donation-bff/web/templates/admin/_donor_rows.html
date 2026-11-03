@@ -1,0 +1,55 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{% import "partials/_ui.html" as ui with context %}
+{% macro sort_link(key, label) %}{% set active = g.sort == key %}
+<a class="inline-flex cursor-pointer items-center gap-1 hover:text-primary" hx-get="{{ url_for('donors.rows', **g.args(sort=key, dir=('' if active and g.desc else 'desc') if active else '', page=1)) }}"
+   hx-target="#grid" hx-select="#grid" hx-swap="outerHTML">{{ label }}<i data-lucide="{{ ('arrow-down' if g.desc else 'arrow-up') if active else 'arrow-up-down' }}" class="size-3 {{ '' if active else 'opacity-30' }}"></i></a>
+{% endmacro %}
+<div id="grid" x-init="refreshed({{ total }}, '{{ qs }}')">
+  <div class="overflow-x-auto">
+  <table class="table table-sm md:table-md">
+    <thead><tr>
+      <th class="w-10"><input type="checkbox" class="checkbox checkbox-sm checkbox-primary" :checked="pageAllChecked()" @change.stop="togglePage($event.target.checked)" aria-label="Select page"></th>
+      <th>{{ sort_link('name', 'Donor') }}</th><th>{{ sort_link('group', 'Group') }}</th><th>Phone</th>
+      <th>{{ sort_link('donations', 'Donations') }}</th><th>{{ sort_link('last', 'Last donation') }}</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>
+    {% for d in rows %}{% set no_email = 'no-email.local' in d.email %}
+      <tr class="hover" data-row-id="{{ d.id }}" :class="has({{ d.id|tojson|forceescape }}) && 'bg-primary/5'">
+        <td><input type="checkbox" class="checkbox checkbox-sm checkbox-primary" :checked="has({{ d.id|tojson|forceescape }})" @change.stop="toggle({{ d.id|tojson|forceescape }})" aria-label="Select {{ d.name }}"></td>
+        <td><a href="{{ url_for('donors.profile', i=d.id) }}" class="flex items-center gap-3">{{ ui.avatar(d.name, 'w-9', photo=d.photo_id) }}
+          <div class="min-w-0"><div class="truncate font-semibold hover:text-primary">{{ d.name }}</div>
+            <div class="truncate text-xs opacity-60">{{ 'no email yet' if no_email else d.email }}</div>
+            {% if d.role != 'donor' %}<span class="badge badge-xs {{ 'badge-primary' if d.role == 'admin' else 'badge-secondary' }} capitalize">{{ d.role }}{{ ' · ' ~ d.staff_role if d.staff_role }}</span>{% endif %}</div></a></td>
+        <td>{{ ui.blood(d.blood_group) }}</td>
+        <td class="whitespace-nowrap">{{ d.phone|phone }}</td>
+        <td class="tabular-nums">{{ d.total }}</td>
+        <td class="whitespace-nowrap">{{ d.last_donation|nice_date if d.last_donation else '—' }}</td>
+        <td>{% if d.wait is none %}<span class="badge badge-soft badge-info">New</span>{% elif d.wait == 0 %}<span class="badge badge-soft badge-success">Eligible</span>{% else %}<span class="badge badge-soft badge-warning">In {{ d.wait }} days</span>{% endif %}</td>
+        <td class="whitespace-nowrap text-right">
+          <button type="button" class="btn btn-ghost btn-xs btn-circle" title="Quick edit"
+            @click="editing = {{ {'id': d.id, 'name': d.name, 'email': '' if no_email else d.email, 'phone': d.phone, 'blood_group': d.blood_group or '', 'sex': d.sex or '', 'weight': d.weight or '', 'dob': d.dob or ''}|tojson|forceescape }}; open('dlg-edit')"><i data-lucide="pencil" class="size-4"></i></button>
+          <a href="{{ d.phone|wa }}" target="_blank" class="btn btn-ghost btn-xs btn-circle text-success" title="WhatsApp"><i data-lucide="message-circle" class="size-4"></i></a>
+          <a href="{{ url_for('donors.profile', i=d.id) }}" class="btn btn-ghost btn-xs" title="Open profile"><i data-lucide="user-round" class="size-4"></i>Profile</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8">{% call ui.empty('user-search', 'No donors match', 'Change the filters, or add donors with the buttons above.') %}{% endcall %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+    <span class="opacity-70">{% if total %}Showing <b>{{ (g.page - 1) * g.per + 1 }}–{{ [g.page * g.per, total]|min }}</b> of <b>{{ '{:,}'.format(total) }}</b> donors{% endif %}</span>
+    {% if pages > 1 %}
+    <div class="join">
+      {% set nav = [('chevrons-left', 1), ('chevron-left', [g.page - 1, 1]|max)] %}
+      {% for icon, p in nav %}<button type="button" class="join-item btn btn-sm" {{ 'disabled' if g.page == 1 }} hx-get="{{ url_for('donors.rows', **g.args(page=p)) }}" hx-target="#grid" hx-select="#grid" hx-swap="outerHTML"><i data-lucide="{{ icon }}" class="size-4"></i></button>{% endfor %}
+      <button type="button" class="join-item btn btn-sm pointer-events-none">Page {{ g.page }} / {{ '{:,}'.format(pages) }}</button>
+      {% for icon, p in [('chevron-right', [g.page + 1, pages]|min), ('chevrons-right', pages)] %}<button type="button" class="join-item btn btn-sm" {{ 'disabled' if g.page == pages }} hx-get="{{ url_for('donors.rows', **g.args(page=p)) }}" hx-target="#grid" hx-select="#grid" hx-swap="outerHTML"><i data-lucide="{{ icon }}" class="size-4"></i></button>{% endfor %}
+    </div>{% endif %}
+  </div>
+</div>

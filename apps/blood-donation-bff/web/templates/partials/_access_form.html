@@ -1,0 +1,30 @@
+{#
+  Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+  This file is part of LifeFlow Blood Camp and is proprietary and confidential.
+  Unauthorised copying, modification or distribution is strictly prohibited.
+#}
+
+{# Account type + volunteer role + extra functions (Volunteers & admins page and donor profile). #}
+{% macro access_form(u, action, target=None, next=None) %}
+{# Account type + volunteer role + extra functions. Used here and on the donor profile. #}
+<div class="space-y-4" x-data="{ role: '{{ u.role }}', vrole: '{{ u.staff_role_id or '' }}', rolePerms: {{ role_perms|tojson|forceescape }},
+     fromRole(p) { return this.role === 'volunteer' && (this.rolePerms[this.vrole] || []).includes(p) } }">
+  {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+  <div><div class="mb-1 text-xs font-semibold uppercase tracking-wider opacity-60">Account type</div>
+    <div class="join w-full">{% for r in roles %}<input class="join-item btn btn-sm flex-1 capitalize checked:border-primary checked:bg-primary checked:text-primary-content" type="radio" name="role" value="{{ r }}" aria-label="{{ r }}" x-model="role" {{ 'checked' if u.role == r }} {{ 'disabled' if u.id == current_user.id and r != 'admin' }}>{% endfor %}</div></div>
+  <div x-show="role === 'volunteer'">
+    <div class="mb-1 text-xs font-semibold uppercase tracking-wider opacity-60">Volunteer role</div>
+    <select name="staff_role_id" x-model="vrole" class="select select-sm w-full"><option value="">No role — only the extra functions below</option>
+      {% for r in vroles %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}</select>
+  </div>
+  <div class="space-y-1.5" :class="role !== 'volunteer' && 'opacity-50'">
+    <p class="text-xs font-semibold uppercase tracking-wider opacity-60" x-text="role === 'admin' ? 'Admins can use every function' : role === 'donor' ? 'Donors have no staff functions' : 'Functions (from role, plus extras you switch on)'"></p>
+    {% for k, label in perms.items() %}
+    <label class="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-1 py-0.5 hover:bg-base-200/60"><span class="text-sm">{{ label }}
+        <span class="badge badge-ghost badge-xs" x-show="fromRole('{{ k }}')">from role</span></span>
+      <input type="checkbox" class="toggle toggle-primary toggle-sm" name="perm" value="{{ k }}" {{ 'checked' if k in u.perms }}
+             :disabled="role !== 'volunteer' || fromRole('{{ k }}')" :checked="fromRole('{{ k }}') || $el.checked"></label>
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}
