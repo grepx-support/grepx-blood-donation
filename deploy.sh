@@ -24,8 +24,10 @@ die() { say ERROR "$1"; exit 1; }
 step() { say INFO "── $1"; }
 SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO=sudo
 
-# Repos committed from Windows lose the executable bit: set it on every script before using any of them.
+# Repos committed from Windows lose the executable bit: set it on every script before using any of them
+# (core.fileMode=false so git does not count that as a local change and later pulls stay clean).
 for repo in . "${GREPX_PLATFORM:-../grepx-platform}" "${GREPX_SERVICES:-../grepx-services}"; do
+  [ -d "$repo/.git" ] && git -C "$repo" config core.fileMode false
   [ -d "$repo" ] && find "$repo" -name "*.sh" -not -path "*/.venv/*" -not -path "*/node_modules/*" -exec chmod +x {} + 2>/dev/null || true
 done
 
@@ -43,17 +45,34 @@ if [ "$PULL" = 1 ]; then
 fi
 
 step "2/7 build nexus_server"
-if ! command -v cmake >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1; then
-  command -v apt-get >/dev/null 2>&1 || die "install cmake and a C++20 compiler (g++ 11+ or clang 14+), then run again"
-  say INFO "installing cmake + g++"; $SUDO apt-get update -qq && $SUDO apt-get install -y -qq cmake g++ ninja-build >/dev/null
+BIN="${GREPX_PLATFORM:-../grepx-platform}/platform/nexus-server/bin/nexus_server"
+build_nexus() {
+  if ! command -v cmake >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1; then
+    command -v apt-get >/dev/null 2>&1 || { say WARN "no cmake / C++ compiler"; return 1; }
+    say INFO "installing cmake + g++"; $SUDO apt-get update -qq && $SUDO apt-get install -y -qq cmake g++ ninja-build >/dev/null
+  fi
+  local gen=""; command -v ninja >/dev/null 2>&1 && gen="-G Ninja"
+  [ -f "$NEXUS/build/CMakeCache.txt" ] || cmake -S "$NEXUS" -B "$NEXUS/build" $gen -DCMAKE_BUILD_TYPE=Release >/dev/null || return 1
+  # Parallel jobs: one per ~1.5 GB of available memory (sqlite3.c alone needs ~1 GB to compile), at most one per CPU.
+  local mem_kb jobs cpus
+  mem_kb="$(awk '/MemAvailable/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+  jobs="${NEXUS_JOBS:-$(( mem_kb / 1500000 ))}"; cpus="$(nproc 2>/dev/null || echo 1)"
+  [ "$jobs" -lt 1 ] && jobs=1; [ "$jobs" -gt "$cpus" ] && jobs="$cpus"
+  say INFO "building with $jobs parallel job(s) - the first build takes a few minutes"
+  cmake --build "$NEXUS/build" --target nexus_server -j "$jobs" >/dev/null
+}
+if [ "${NEXUS_SKIP_BUILD:-0}" = 1 ]; then
+  say INFO "build skipped (NEXUS_SKIP_BUILD=1) - using $BIN"
+elif build_nexus; then
+  say OK "nexus_server built"
+elif [ -x "$BIN" ]; then
+  say WARN "nexus_server could not be built here - using the binary already in $BIN"
+else
+  die "nexus_server could not be built and $BIN is missing - build it elsewhere and copy it there (see README)"
 fi
-GEN=""; command -v ninja >/dev/null 2>&1 && GEN="-G Ninja"
-[ -f "$NEXUS/build/CMakeCache.txt" ] || cmake -S "$NEXUS" -B "$NEXUS/build" $GEN -DCMAKE_BUILD_TYPE=Release >/dev/null \
-  || die "cmake configure failed in $NEXUS"
-cmake --build "$NEXUS/build" --target nexus_server -j "$(nproc 2>/dev/null || echo 2)" >/dev/null || die "nexus_server build failed"
-say OK "nexus_server built"
 
 step "3/7 link the workspace"
+for repo in "${GREPX_PLATFORM:-../grepx-platform}" "${GREPX_SERVICES:-../grepx-services}"; do git -C "$repo" config core.fileMode false 2>/dev/null || true; done
 find "${GREPX_PLATFORM:-../grepx-platform}" "${GREPX_SERVICES:-../grepx-services}" -name "*.sh" -not -path "*/.venv/*" -exec chmod +x {} + 2>/dev/null || true
 bash workspace.sh | grep -v "^.*OK .*->" || true
 
