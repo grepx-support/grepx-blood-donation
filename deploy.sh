@@ -24,8 +24,13 @@ die() { say ERROR "$1"; exit 1; }
 step() { say INFO "── $1"; }
 SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO=sudo
 
+# Repos committed from Windows lose the executable bit: set it on every script before using any of them.
+for repo in . "${GREPX_PLATFORM:-../grepx-platform}" "${GREPX_SERVICES:-../grepx-services}"; do
+  [ -d "$repo" ] && find "$repo" -name "*.sh" -not -path "*/.venv/*" -not -path "*/node_modules/*" -exec chmod +x {} + 2>/dev/null || true
+done
+
 step "1/7 repos"
-./workspace.sh clone >/dev/null || die "could not get the sibling repos (check git access to ${GREPX_GIT:-git@github.com:grepx-support})"
+bash workspace.sh clone >/dev/null || die "could not get the sibling repos (check git access to ${GREPX_GIT:-git@github.com:grepx-support})"
 if [ "$PULL" = 1 ]; then
   for repo in . "${GREPX_PLATFORM:-../grepx-platform}" "${GREPX_SERVICES:-../grepx-services}" "$NEXUS"; do
     if git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
@@ -49,7 +54,8 @@ cmake --build "$NEXUS/build" --target nexus_server -j "$(nproc 2>/dev/null || ec
 say OK "nexus_server built"
 
 step "3/7 link the workspace"
-./workspace.sh | grep -v "^.*OK .*->" || true
+find "${GREPX_PLATFORM:-../grepx-platform}" "${GREPX_SERVICES:-../grepx-services}" -name "*.sh" -not -path "*/.venv/*" -exec chmod +x {} + 2>/dev/null || true
+bash workspace.sh | grep -v "^.*OK .*->" || true
 
 if [ "${SKIP_INFRA:-0}" != 1 ]; then step "4/7 infrastructure"; scripts/infra.sh; else say INFO "── 4/7 infrastructure skipped (SKIP_INFRA=1)"; fi
 
