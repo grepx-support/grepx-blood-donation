@@ -3,7 +3,9 @@
 #   ./deploy.sh            clone/pull all four repos, build Nexus, set up, migrate, (re)start, seed
 #   ./deploy.sh --no-pull  same, without git pull (deploy exactly what is checked out)
 # Safe to run again: every step only does what is missing or changed.
-# Env: SKIP_INFRA=1 (databases / toolchain already set up), NO_RESTART=1 (set up only, don't touch running services).
+# Env: SKIP_INFRA=1 (databases / toolchain already set up), NO_RESTART=1 (set up only, don't touch running services),
+#      SITE_URL=https://… (written to .env), ADMIN_EMAIL + ADMIN_PASSWORD + ADMIN_PHONE [+ ADMIN_NAME] (create the admin).
+# Secrets in .env (JWT_SECRET, SECRET_BOX_KEY, NEXUS_SERVICE_SECRET) are generated when still placeholders.
 #
 # Steps
 #   1 repos    ./workspace.sh clone: ../grepx-platform ../grepx-services ../grepx-nexus-cpp next to this repo; git pull each
@@ -53,6 +55,12 @@ if [ "${SKIP_INFRA:-0}" != 1 ]; then step "4/7 infrastructure"; scripts/infra.sh
 
 step "5/7 set up services"
 scripts/setup.sh
+secret() { python3 -c 'import secrets; print(secrets.token_hex(32))'; }
+fill() {   # fill KEY: generate a value only while .env still has the placeholder (or nothing) - never replaces a real one
+  if grep -qE "^$1=(change-me.*)?$" .env; then sed -i "s#^$1=.*#$1=$(secret)#" .env; say OK "$1 generated in .env"; fi
+}
+fill JWT_SECRET; fill SECRET_BOX_KEY; fill NEXUS_SERVICE_SECRET
+[ -n "${SITE_URL:-}" ] && sed -i "s#^SITE_URL=.*#SITE_URL=$SITE_URL#" .env
 
 if [ "${NO_RESTART:-0}" = 1 ]; then say OK "set up only (NO_RESTART=1) - start with: scripts/run.sh restart"; exit 0; fi
 
@@ -70,4 +78,7 @@ for _ in $(seq 1 30); do scripts/run.sh status 2>&1 | grep -qE "STARTING|DOWN" |
 scripts/run.sh seed
 scripts/run.sh status | tail -1
 scripts/run.sh workspace || true
-say OK "deployed - first time? create the admin: scripts/run.sh admin EMAIL PASSWORD \"NAME\" PHONE"
+if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ] && [ -n "${ADMIN_PHONE:-}" ]; then
+  scripts/run.sh admin "$ADMIN_EMAIL" "$ADMIN_PASSWORD" "${ADMIN_NAME:-Admin}" "$ADMIN_PHONE"
+fi
+say OK "deployed - $(grep -E '^SITE_URL=' .env | cut -d= -f2-)"
