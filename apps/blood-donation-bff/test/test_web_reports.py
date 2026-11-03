@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Stage 6 - drive reports and retros (event-report-service computes the numbers), analytics, the lesson shown when planning
 the next drive, certificates."""
 from datetime import date

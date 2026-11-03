@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Blood donor eligibility (Singapore HSA criteria) and the LifeBot question flow - the blood product's rules,
 loaded by the generic questionnaire-service (deployment.yaml plugins.questionnaire). Pure.
 

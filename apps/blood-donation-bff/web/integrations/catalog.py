@@ -1,6 +1,6 @@
 # Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
-# This file is part of LifeFlow Blood Camp and is proprietary and confidential.
-# Unauthorised copying, modification or distribution is strictly prohibited.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
 
 """What can be connected, which fields each needs, and how to check the connection (declarative: add an entry)."""
 import grepx_contracts as gc

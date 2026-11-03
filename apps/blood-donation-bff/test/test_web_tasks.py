@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Stage 4 - planning: the original task pages over task-service (in-memory Nexus): create / assign, my tasks,
 claim, drag between columns, edit, delete, bulk delete, the calendar feed, the drive checklist."""
 from datetime import date

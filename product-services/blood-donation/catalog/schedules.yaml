@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 # Recurring jobs registered with the common scheduler-service.
 schedules:
   - {schedule_id: task-reminders, job: task-reminders, target_service: task-service, kind: EVERY_MINUTES, every_minutes: 15}

@@ -1,6 +1,6 @@
 # Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
-# This file is part of LifeFlow Blood Camp and is proprietary and confidential.
-# Unauthorised copying, modification or distribution is strictly prohibited.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
 
 """The standard drive checklist. Its items live in checklist-service (seeded from product-services/<p>/catalog/playbook.yaml);
 checklist-service creates and removes the tasks. This module only reads the template and asks."""

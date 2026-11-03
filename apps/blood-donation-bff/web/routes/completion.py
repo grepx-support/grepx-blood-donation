@@ -1,6 +1,6 @@
 # Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
-# This file is part of LifeFlow Blood Camp and is proprietary and confidential.
-# Unauthorised copying, modification or distribution is strictly prohibited.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
 
 """Completing a drive (organisers) and the public certificate pages (anyone with the link can verify)."""
 from flask import Blueprint, Response, render_template, request, url_for, flash, abort, current_app

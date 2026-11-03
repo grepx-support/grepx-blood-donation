@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Blood donor fields on the generic person record, loaded by people-service (deployment.yaml plugins.profile). Pure.
 
 Plugin interface:  FIELDS = (...)   the product's own person fields

@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Stage 5 - messages, automatic messages, integrations, analytics access and social publishing through the original
 pages: notification-service delivers and logs, template-service holds the automatic-message settings, settings-service
 holds integration settings (secrets sealed), campaign-service publishes to social networks."""

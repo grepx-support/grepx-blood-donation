@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+ * This file is part of the GrepX platform and is proprietary and confidential.
+ * Unauthorised copying, use, modification or distribution is strictly prohibited.
+ */
+
 // Blood donation — staff: drives (create with slots + checklist, board, complete), check-in desk, donors, reports.
 import { api, can, esc, run } from "../../app.js";
 

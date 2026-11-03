@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Tasks (task-service): the original rows (status, drive_id, assignee/creator names) built from task-service state."""
 from __future__ import annotations
 import grepx_contracts as gc

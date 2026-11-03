@@ -1,6 +1,6 @@
 # Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
-# This file is part of LifeFlow Blood Camp and is proprietary and confidential.
-# Unauthorised copying, modification or distribution is strictly prohibited.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
 
 """On-site walk-in page anyone can use at the venue (donor, volunteer, or a tablet at the door).
 Privacy: people are found only by an exact phone number or email, never by browsing names."""

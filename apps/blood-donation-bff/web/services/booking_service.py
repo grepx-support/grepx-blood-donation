@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Booking a donor onto a drive: booking-service enforces slot capacity; this maps its answer to the
 exceptions the original routes expect."""
 from repos._nexus import RepoError

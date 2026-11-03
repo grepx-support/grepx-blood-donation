@@ -1,6 +1,6 @@
 # Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
-# This file is part of LifeFlow Blood Camp and is proprietary and confidential.
-# Unauthorised copying, modification or distribution is strictly prohibited.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
 
 """The channels people can be messaged on, as the pages need them: which address to use and whether it is set up.
 Delivery itself is notification-service's job (Messenger sends there)."""

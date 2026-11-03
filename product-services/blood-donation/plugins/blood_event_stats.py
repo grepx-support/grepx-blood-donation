@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Blood product figures added to the generic event report (config plugins.event_report).
 
 Plugin interface:  extras(read, event, attended) -> dict      read = a Reader; attended = the bookings marked attended

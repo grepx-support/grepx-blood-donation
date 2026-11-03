@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 service_name: donor-service
 snapshot_table: donor_requests
 description: "Blood donor staff tools: saved donor-grid groups and the Excel import review queue (the donor record itself is people-service + plugins/blood_profile). Keywords: donor, segment, import"

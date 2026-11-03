@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+ * This file is part of the GrepX platform and is proprietary and confidential.
+ * Unauthorised copying, use, modification or distribution is strictly prohibited.
+ */
+
 // Shared web shell for every GrepX product: API client (+trace ids), session, router, nav, theme.
 // A product = products/<name>.json (brand, colours, modules). Modules live in modules/core (all products)
 // and modules/<product>/ (product features). Nothing is copied between products.

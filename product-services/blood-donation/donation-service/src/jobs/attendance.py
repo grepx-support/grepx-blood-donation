@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Reacts to bookings (booking-service): 'attended' at an event is a donation - record it (and say thank you);
 leaving 'attended' voids it. Donations keep the blood product's own names (donor_id, drive_id, donated_on)."""
 

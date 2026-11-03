@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """The web tier's only door to the data: Nexus state tables (read) and requests to the owning service (write).
 
 Repositories keep the original method names and row shapes, so routes, services and templates work unchanged;

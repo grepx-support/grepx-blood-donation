@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 # Settings for the common services (shared by every product). Overrides config/common.yaml.
 # database:
 #   url: postgresql://grepx:grepx@127.0.0.1:5432/{service_db}

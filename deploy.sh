@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 # Get, build and run everything - one command for a new server and for every update after.
 #   ./deploy.sh            clone/pull all four repos, build Nexus, set up, migrate, (re)start, seed
 #   ./deploy.sh --no-pull  same, without git pull (deploy exactly what is checked out)

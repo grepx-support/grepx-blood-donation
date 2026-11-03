@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Donor administration: the donor grid (filters, sorting, paging), saved segments and Excel import staging.
 Donors, segments and import rows all belong to donor-service; donation counts come from donation-service."""
 from __future__ import annotations

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
- * This file is part of LifeFlow Blood Camp and is proprietary and confidential.
- * Unauthorised copying, modification or distribution is strictly prohibited.
+ * This file is part of the GrepX platform and is proprietary and confidential.
+ * Unauthorised copying, use, modification or distribution is strictly prohibited.
  */
 
 // Search-as-you-type person picker (works with tens of thousands of people). Optionally bound to a task object `t`.

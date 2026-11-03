@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Stage 2 - the original admin drive pages over all services (in-memory Nexus): create with slots, edit, board,
 attendance, walk-ins, kiosk, scan, slot moves and capacity, announce, invite, complete (certificates + vouchers),
 reopen, clone."""

@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Smaller repositories: pictures (media-service), social posts (campaign-service), drive reports (event-report-service),
 the message log (notification-service), settings and analytics visibility (settings-service)."""
 from __future__ import annotations

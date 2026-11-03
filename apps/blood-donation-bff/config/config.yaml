@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 service_name: blood-donation-bff
 snapshot_table: bff_requests
 recovery_criteria: "to_service = 'blood-donation-bff' OR from_service = 'blood-donation-bff'"

@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """End to end: the BFF over all 19 services on an in-memory Nexus — the donor journey and the staff journey."""
 from datetime import date
 from pathlib import Path

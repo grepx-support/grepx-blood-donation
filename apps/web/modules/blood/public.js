@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+ * This file is part of the GrepX platform and is proprietary and confidential.
+ * Unauthorised copying, use, modification or distribution is strictly prohibited.
+ */
+
 // Blood donation — public pages: home, drive + booking, sign-up, eligibility (form + LifeBot), certificate, kiosk.
 import { api, esc, login, run, state } from "../../app.js";
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
- * This file is part of LifeFlow Blood Camp and is proprietary and confidential.
- * Unauthorised copying, modification or distribution is strictly prohibited.
+ * This file is part of the GrepX platform and is proprietary and confidential.
+ * Unauthorised copying, use, modification or distribution is strictly prohibited.
  */
 
 // Donor grid selection: keeps ticked ids across pages/filters, or "all N matching" the current filters.

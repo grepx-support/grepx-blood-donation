@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Stage 3 - the original donor administration over all services (in-memory Nexus): grid + filters + paging, add a
 donor, paste many, Excel import (stage -> fix -> commit), saved segments, bulk edit / message, export, donor profile
 (edit, donation), users & passwords, volunteers & roles."""

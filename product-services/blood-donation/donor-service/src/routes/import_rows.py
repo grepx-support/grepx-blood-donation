@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """STAGE_IMPORT_ROW / UPDATE_IMPORT_ROW — Excel rows held for review (fix, ignore) before they become donors.
 The row data and its validation errors are stored as given; status: valid | error | ignored | imported | skipped."""
 from grepx_service import RequestContext, now_iso, state_of

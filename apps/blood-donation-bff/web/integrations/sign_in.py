@@ -1,6 +1,6 @@
 # Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
-# This file is part of LifeFlow Blood Camp and is proprietary and confidential.
-# Unauthorised copying, modification or distribution is strictly prohibited.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
 
 """Sign in with Google: the web only runs the OAuth redirect (Authlib) and hands Google's ID token to auth-service,
 which verifies it and decides who the person is. Credentials come from the Integrations page (or .env)."""

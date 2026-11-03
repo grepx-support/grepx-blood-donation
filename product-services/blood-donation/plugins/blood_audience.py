@@ -1,3 +1,7 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
 """Blood product audiences and invite filters, loaded by the generic campaign-service (config plugins.audience). Pure.
 
 Plugin interface:  STATS_TABLE                      per-person figures the filters need (row key = person id)
