@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
-# This file is part of the GrepX platform and is proprietary and confidential.
-# Unauthorised copying, use, modification or distribution is strictly prohibited.
-
 # Get, build and run everything - one command for a new server and for every update after.
 #   ./deploy.sh            clone/pull all four repos, build Nexus, set up, migrate, (re)start, seed
 #   ./deploy.sh --no-pull  same, without git pull (deploy exactly what is checked out)
@@ -66,11 +62,21 @@ build_nexus() {
   cmake --build "$NEXUS/build" --target nexus_server -j "$jobs" >/dev/null
 }
 if [ "${NEXUS_SKIP_BUILD:-0}" = 1 ]; then
-  say INFO "build skipped (NEXUS_SKIP_BUILD=1) - using $BIN"
+  built="$(find "$NEXUS" -type f -name nexus_server -perm -u+x -not -path '*/platform/*' 2>/dev/null | head -1 || true)"
+  if [ ! -x "$BIN" ] && [ -z "$built" ] && [ -f "$NEXUS/prebuilt/nexus_server-linux-x86_64" ]; then
+    mkdir -p "$(dirname "$BIN")"; cp "$NEXUS/prebuilt/nexus_server-linux-x86_64" "$BIN"; chmod 755 "$BIN"
+  fi
+  [ -x "$BIN" ] || [ -n "$built" ] \
+    || die "NEXUS_SKIP_BUILD=1 but there is no nexus_server - copy one to $BIN (or build it in $NEXUS) first"
+  say INFO "build skipped (NEXUS_SKIP_BUILD=1)"
 elif build_nexus; then
   say OK "nexus_server built"
 elif [ -x "$BIN" ]; then
   say WARN "nexus_server could not be built here - using the binary already in $BIN"
+elif [ -f "$NEXUS/prebuilt/nexus_server-linux-x86_64" ] && [ "$(uname -m)" = x86_64 ]; then
+  # Servers that stop the compiler (memory watchdogs) use the static binary committed in grepx-nexus-cpp/prebuilt/.
+  mkdir -p "$(dirname "$BIN")"; cp "$NEXUS/prebuilt/nexus_server-linux-x86_64" "$BIN"; chmod 755 "$BIN"
+  say WARN "nexus_server could not be built here - using grepx-nexus-cpp/prebuilt/nexus_server-linux-x86_64"
 else
   die "nexus_server could not be built and $BIN is missing - build it elsewhere and copy it there (see README)"
 fi
