@@ -1,0 +1,19 @@
+name: grepx_mobile
+description: One Flutter app (iOS + Android) for every GrepX product — pick the product at build time.
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.1
+  shared_preferences: ^2.2.3
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.1.1
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+flutter:
+  uses-material-design: true
