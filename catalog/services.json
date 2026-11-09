@@ -294,6 +294,19 @@
     "reacts_to": []
   },
   {
+    "name": "ops-monitor-service",
+    "layer": "common",
+    "product": "",
+    "path": "common-services/ops-monitor-service",
+    "request_table": "",
+    "actions": [],
+    "reasons": [],
+    "other_tables": [],
+    "summary": "Read-only live operations screen: every request and verdict as it happens, traces, service health, headline numbers and a live map of places (all set by the deployment's monitor: section). Keywords: monitor, ops, live, map, wall screen, command centre, dashboard, trace, observability",
+    "routes": [],
+    "reacts_to": []
+  },
+  {
     "name": "people-service",
     "layer": "common",
     "product": "",
@@ -580,4 +593,4 @@
     ],
     "reacts_to": []
   }
-]
+]

@@ -49,3 +49,32 @@ plugins:          # product rules loaded by generic services (grepx_service.plug
   audience: blood_audience             # campaign-service: who is in an audience / matches invite filters
   event_report: blood_event_stats      # event-report-service: product figures added to the event report
   profile: blood_profile               # people-service: blood group, sex, weight, date of birth on the person record
+
+monitor:          # ops-monitor-service: the live operations screen at <site>/ops/ (generic; these lines make it this product's)
+  title: LifeFlow Live
+  subtitle: Blood donation drives · Singapore
+  audience: admin                    # admin | staff - who may open it (session token + role from access-service)
+  history_hours: 6                   # how much recent activity the wire shows after a restart
+  map:
+    center: [103.8198, 1.3521]       # lng, lat
+    zoom: 10.6
+    geocoder: onemap                 # onemap (Singapore) | nominatim (OpenStreetMap) | none
+    country: sg
+  places:                            # what is drawn on the map: one dot per open drive
+    table: events
+    id: event_id
+    label: title
+    address: venue
+    date: event_date
+    capacity: capacity
+    where: "state = 'open' AND event_date >= '{today}'"
+    counts:                          # numbers per drive, counted from another table by its drive id
+      - {name: registered, table: bookings, by: event_id, where: "state IN ('confirmed', 'attended')"}
+      - {name: donated, table: bookings, by: event_id, where: "state = 'attended'"}
+    known: {}                        # "venue text": [lng, lat] for venues the geocoder cannot find
+  words: {places: Upcoming drives, registered: registered, donated: donated}
+  kpis:                              # headline numbers (count of rows, or sum: field)
+    - {label: Donated today, table: donations, where: "donated_on = '{today}'"}
+    - {label: Upcoming drives, table: events, where: "state = 'open' AND event_date >= '{today}'"}
+    - {label: Registered (upcoming), table: bookings, where: "state = 'confirmed'"}
+    - {label: Donations all time, table: donations}
