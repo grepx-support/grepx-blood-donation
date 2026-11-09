@@ -84,7 +84,8 @@ fi
 step "3/7 link the workspace"
 for repo in "${GREPX_PLATFORM:-../grepx-platform}" "${GREPX_SERVICES:-../grepx-services}"; do git -C "$repo" config core.fileMode false 2>/dev/null || true; done
 find "${GREPX_PLATFORM:-../grepx-platform}" "${GREPX_SERVICES:-../grepx-services}" -name "*.sh" -not -path "*/.venv/*" -exec chmod +x {} + 2>/dev/null || true
-bash workspace.sh | grep -v "^.*OK .*->" || true
+bash workspace.sh | grep -v " OK .* -> " || true
+[ -L platform ] && [ -L common-services ] || die "could not link the workspace (see the message above) - on Windows use WSL or a Linux server"
 
 if [ "${SKIP_INFRA:-0}" != 1 ]; then step "4/7 infrastructure"; scripts/infra.sh; else say INFO "── 4/7 infrastructure skipped (SKIP_INFRA=1)"; fi
 
