@@ -117,4 +117,6 @@ scripts/run.sh workspace || true
 if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ] && [ -n "${ADMIN_PHONE:-}" ]; then
   scripts/run.sh admin "$ADMIN_EMAIL" "$ADMIN_PASSWORD" "${ADMIN_NAME:-Admin}" "$ADMIN_PHONE"
 fi
+# this project's own model on the AI engine (its context: product-services/blood-donation/catalog/ai_context.md); skipped when no engine here
+bash "${GREPX_PLATFORM:-../grepx-platform}/platform/ai-engine/register.sh" grepx-blood-donation product-services/blood-donation/catalog/ai_context.md || true
 say OK "deployed - $(grep -E '^SITE_URL=' .env | cut -d= -f2-)"
