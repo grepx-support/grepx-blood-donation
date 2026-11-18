@@ -21,6 +21,11 @@ for perm in INTERNET CAMERA; do grep -q "permission.$perm" "$M" || sed -i.bak "/
 P=ios/Runner/Info.plist
 grep -q NSCameraUsageDescription "$P" || sed -i.bak "0,/<dict>/s|<dict>|<dict>\n\t<key>NSCameraUsageDescription</key>\n\t<string>Scan barcodes, IMEIs and QR codes</string>|" "$P"
 rm -f "$M.bak" "$P.bak"
+# Gradle memory: new Flutter projects ask for 8 GB, which WSL / small laptops kill mid-build ("daemon disappeared").
+# 3 GB is plenty for this app; set GRADLE_JVMARGS to change it.
+G=android/gradle.properties
+JVM="${GRADLE_JVMARGS:--Xmx3g -XX:MaxMetaspaceSize=1g -XX:ReservedCodeCacheSize=256m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8}"
+if [ -f "$G" ]; then sed -i.bak "s|^org.gradle.jvmargs=.*|org.gradle.jvmargs=$JVM|" "$G" && rm -f "$G.bak"; fi
 say INFO "fetching packages"
 flutter pub get >/dev/null || die "flutter pub get failed"
 say OK "mobile ready - for QR scanning add NSCameraUsageDescription to ios/Runner/Info.plist"
