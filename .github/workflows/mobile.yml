@@ -1,0 +1,38 @@
+# Copyright (c) 2026 GrepX Private Limited (grepx.sg). All rights reserved.
+# This file is part of the GrepX platform and is proprietary and confidential.
+# Unauthorised copying, use, modification or distribution is strictly prohibited.
+
+# Builds the shared phone app (apps/mobile) for each product on every push that changes it; download each APK from the
+# run's artifacts. Repository variables (Settings > Secrets and variables > Actions > Variables) give each product's site:
+# API_BASE_BLOOD, API_BASE_ELECTRONICS, API_BASE_KITCHEN.
+name: mobile
+on:
+  push:
+    paths: ["apps/mobile/**", ".github/workflows/mobile.yml"]
+  workflow_dispatch:
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {product: blood-donation, site: API_BASE_BLOOD}
+          - {product: electronics, site: API_BASE_ELECTRONICS}
+          - {product: kitchen, site: API_BASE_KITCHEN}
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: "17"}
+      - uses: subosito/flutter-action@v2
+        with: {channel: stable, cache: true}
+      - run: bash setup.sh
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter build apk --release --dart-define=PRODUCT=${{ matrix.product }} --dart-define=API_BASE=${{ vars[matrix.site] || 'http://10.0.2.2:8851' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.product }}-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk

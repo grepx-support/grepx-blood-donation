@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
               final s = await attempt(context, () => widget.api.post('/auth/login', {'email': email.text.trim(), 'password': password.text, 'remember': remember}));
               if (s != null) {
                 await widget.session.save(Map<String, dynamic>.from(s as Map));
-                if (context.mounted) Navigator.pop(context);
+                if (context.mounted && Navigator.canPop(context)) Navigator.pop(context);      // shown as the body (staff-only product): nothing to close
               }
             },
             child: const Text('Log in'),

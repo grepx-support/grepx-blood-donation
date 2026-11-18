@@ -1,5 +1,5 @@
 // One app for every GrepX product. The product is chosen at build time:
-//   --dart-define=PRODUCT=blood-donation | kitchen   --dart-define=API_BASE=https://...
+//   --dart-define=PRODUCT=blood-donation | kitchen | electronics   --dart-define=API_BASE=https://...
 // Core (API client with trace ids, login, tasks, theme) is shared; each product adds its own tabs.
 import 'package:flutter/material.dart';
 
@@ -70,12 +70,14 @@ class _ShellState extends State<Shell> {
             ),
         ],
       ),
-      body: tabs[index].build(context),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) => setState(() => index = i),
-        destinations: [for (final t in tabs) NavigationDestination(icon: Icon(t.icon), label: t.label)],
-      ),
+      body: tabs.isEmpty ? LoginScreen(api: widget.api, session: widget.session) : tabs[index].build(context),     // staff-only products: log in first
+      bottomNavigationBar: tabs.length < 2
+          ? null
+          : NavigationBar(
+              selectedIndex: index,
+              onDestinationSelected: (i) => setState(() => index = i),
+              destinations: [for (final t in tabs) NavigationDestination(icon: Icon(t.icon), label: t.label)],
+            ),
     );
   }
 }

@@ -15,6 +15,12 @@ if [ ! -d android ]; then
   say INFO "generating the android/ and ios/ shells (first time)"
   flutter create --org sg.grepx --project-name grepx_mobile --platforms=android,ios . >/dev/null || die "flutter create failed"
 fi
+# the app talks to the server and opens the camera for scanning (Android release builds need these said)
+M=android/app/src/main/AndroidManifest.xml
+for perm in INTERNET CAMERA; do grep -q "permission.$perm" "$M" || sed -i.bak "/<manifest/a\    <uses-permission android:name=\"android.permission.$perm\"/>" "$M"; done
+P=ios/Runner/Info.plist
+grep -q NSCameraUsageDescription "$P" || sed -i.bak "0,/<dict>/s|<dict>|<dict>\n\t<key>NSCameraUsageDescription</key>\n\t<string>Scan barcodes, IMEIs and QR codes</string>|" "$P"
+rm -f "$M.bak" "$P.bak"
 say INFO "fetching packages"
 flutter pub get >/dev/null || die "flutter pub get failed"
 say OK "mobile ready - for QR scanning add NSCameraUsageDescription to ios/Runner/Info.plist"

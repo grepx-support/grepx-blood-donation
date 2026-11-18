@@ -12,7 +12,7 @@ class Session extends ChangeNotifier {
   String get role => _prefs.getString('role') ?? 'guest';
   String? get userId => _prefs.getString('user_id');
   bool get signedIn => token != null;
-  bool get isStaff => role == 'volunteer' || role == 'admin';
+  bool get isStaff => role == 'volunteer' || role == 'staff' || role == 'admin';
 
   Future<void> save(Map<String, dynamic> s) async {
     await _prefs.setString('token', s['token'] as String);
