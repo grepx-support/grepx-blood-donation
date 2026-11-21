@@ -25,7 +25,7 @@ Hard rules
 - Generic code never speaks a product's words (a test enforces it): product settings go in the deployment file named by
   `grepx.workspace.yaml`, product rules in `product-services/<product>/plugins/`, product words for clients in the BFF `vocabulary:`.
 - Renaming stored data = a migration in `platform/tools/migrations/` (`scripts/run.sh migrate`), never a manual edit.
-- Shared UI/API code lives once: `platform/libs/grepx-bff`, `apps/web/modules/core`, `apps/mobile/lib/core`.
+- Shared UI/API code lives once: `platform/libs/grepx-bff`, `apps/web/modules/core`, `platform/mobile/grepx_app` (the phone app; `apps/mobile` holds only the blood screens).
 - The blood-donation web site is the original site in `apps/blood-donation-bff/web`; its `repos/` read Nexus tables and send
   requests - never add SQL or business rules there (put rules in the owning service).
 - Every new service: `scripts/run.sh new`, register in `config/services.ini` (path, project, ports), tests, `scripts/run.sh catalog`,

@@ -2,9 +2,10 @@
 # This file is part of the GrepX platform and is proprietary and confidential.
 # Unauthorised copying, use, modification or distribution is strictly prohibited.
 
-# Builds the shared phone app (apps/mobile) for each product on every push that changes it; download each APK from the
-# run's artifacts. Repository variables (Settings > Secrets and variables > Actions > Variables) give each product's site:
-# API_BASE_BLOOD, API_BASE_ELECTRONICS, API_BASE_KITCHEN.
+# Builds the phone app on every push that changes it: the shared package comes from grepx-platform (checked out next
+# to this repo and linked in as platform/, as ./workspace.sh does), the screens from apps/mobile. Download each APK
+# from the run's artifacts. Repository variables (Settings > Secrets and variables > Actions > Variables) give each
+# product's site: API_BASE_BLOOD, API_BASE_ELECTRONICS.
 name: mobile
 on:
   push:
@@ -17,22 +18,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {product: blood-donation, site: API_BASE_BLOOD}
-          - {product: electronics, site: API_BASE_ELECTRONICS}
-          - {product: kitchen, site: API_BASE_KITCHEN}
-    defaults:
-      run:
-        working-directory: apps/mobile
+          - {product: blood-donation, entry: lib/main.dart, site: API_BASE_BLOOD}
+          - {product: electronics, entry: lib/main_electronics.dart, site: API_BASE_ELECTRONICS}
     steps:
       - uses: actions/checkout@v4
+        with: {path: product}
+      - uses: actions/checkout@v4
+        with: {repository: grepx-support/grepx-platform, path: grepx-platform}
+      - run: ln -s ../grepx-platform/platform product/platform
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: "17"}
       - uses: subosito/flutter-action@v2
         with: {channel: stable, cache: true}
-      - run: bash setup.sh
-      - run: flutter analyze --no-fatal-infos
-      - run: flutter build apk --release --dart-define=PRODUCT=${{ matrix.product }} --dart-define=API_BASE=${{ vars[matrix.site] || 'http://10.0.2.2:8851' }}
+      - working-directory: product/apps/mobile
+        run: bash setup.sh
+      - working-directory: product/apps/mobile
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - working-directory: product/apps/mobile
+        run: flutter build apk --release -t ${{ matrix.entry }} --dart-define=API_BASE=${{ vars[matrix.site] || 'http://10.0.2.2:8851' }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.product }}-apk
-          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          path: product/apps/mobile/build/app/outputs/flutter-apk/app-release.apk

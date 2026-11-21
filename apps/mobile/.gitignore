@@ -1,0 +1,9 @@
+# made by ./setup.sh and flutter on each machine - not kept in git
+android/
+ios/
+.dart_tool/
+build/
+.flutter-plugins*
+.metadata
+pubspec.lock
+*.iml
